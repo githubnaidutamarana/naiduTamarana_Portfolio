@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Healthcare — Book Appointment</title>
+<style>
+:root{
+  --brand:#0a5578;
+  --brand-dark:#08445f;
+  --brand-deep:#052f43;
+  --ink:#1b1f24;
+  --ink-2:#4a5560;
+  --muted:#7c8894;
+  --line:#dfe4e9;
+  --line-2:#eceff2;
+  --page:#f2f3f5;
+  --disabled:#c6c9cd;
+  --danger:#c0392b;
+  --dur-press:120ms;
+  --dur-ui:200ms;
+  --dur-enter:300ms;
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;font-family:var(--font);color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased;}
+
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes riseIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+@keyframes popIn{0%{opacity:0;transform:scale(.85);}60%{transform:scale(1.03);}100%{opacity:1;transform:scale(1);}}
+button{transition:background var(--dur-ui) var(--ease),color var(--dur-ui) var(--ease),
+       border-color var(--dur-ui) var(--ease),transform var(--dur-press) var(--ease),
+       box-shadow var(--dur-ui) var(--ease);}
+button:active:not(:disabled){transform:scale(.98);}
+input,select{transition:border-color var(--dur-ui) var(--ease),box-shadow var(--dur-ui) var(--ease);}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:1ms!important;transition-duration:1ms!important;}
+}
+
+/* ============================================================
+   APP FRAME
+   ============================================================ */
+.app{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+.topbar{
+  flex:0 0 auto;background:var(--brand);padding:14px 26px;
+  display:flex;align-items:center;
+}
+.tec{display:flex;align-items:center;gap:9px;color:#fff;}
+.tec .word{
+  font-size:19px;font-weight:700;line-height:1;letter-spacing:.01em;
+  font-family:Georgia,"Times New Roman",serif;
+}
+
+.screen{display:none;flex:1;min-height:0;}
+.screen.active{display:flex;animation:fadeIn var(--dur-enter) var(--ease) both;}
+
+/* ============================================================
+   SPLIT LAYOUT  (login + otp request)
+   ============================================================ */
+.split{flex:1;display:flex;min-height:0;}
+.brand-pane{
+  position:relative;flex:1 1 52%;background:var(--page);overflow:hidden;
+  display:flex;flex-direction:column;justify-content:center;padding:0 56px;
+}
+.brand-pane .pattern{position:absolute;inset:0;pointer-events:none;}
+.brand-pane .copy{position:relative;z-index:1;max-width:340px;}
+.brand-pane h1{font-size:31px;font-weight:700;color:var(--brand);margin:0 0 14px;line-height:1.18;}
+.brand-pane p{font-size:15px;color:var(--brand);margin:0;line-height:1.6;opacity:.92;}
+.powered{
+  position:absolute;left:56px;bottom:34px;z-index:1;
+  display:flex;align-items:center;gap:7px;
+  font-size:9.5px;letter-spacing:.09em;font-weight:700;color:var(--brand);text-transform:uppercase;
+}
+.powered .mark{
+  width:15px;height:15px;border-radius:3px;background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;
+}
+
+.form-pane{
+  flex:1 1 48%;background:#fff;position:relative;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:48px 40px 76px;
+}
+.form-box{width:100%;max-width:310px;animation:riseIn var(--dur-enter) var(--ease-out) both;}
+.form-box h2{font-size:21px;font-weight:700;margin:0 0 22px;}
+.form-box.centered{text-align:center;}
+.form-box.centered h2{font-size:17.5px;line-height:1.4;margin:0 0 7px;}
+.form-box.centered .lead{font-size:12px;color:var(--muted);margin:0 0 24px;line-height:1.5;}
+.form-box.centered .field{text-align:left;}
+
+.badge-icon{
+  width:34px;height:34px;border-radius:7px;border:1.5px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+  animation:popIn 340ms var(--ease-out) both;
+}
+
+.legal{
+  position:absolute;left:0;right:0;bottom:26px;text-align:center;
+  font-size:11px;color:var(--muted);padding:0 24px;
+}
+.legal a{color:var(--brand);font-weight:600;text-decoration:none;}
+.legal a:hover{text-decoration:underline;}
+
+/* ============================================================
+   FORM PRIMITIVES
+   ============================================================ */
+.field{margin-bottom:15px;}
+.label-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:5px;}
+.field label{display:block;font-size:11.5px;font-weight:500;color:var(--ink-2);}
+.field label .req{color:var(--danger);}
+.link{
+  background:none;border:none;padding:0;cursor:pointer;font-family:inherit;
+  font-size:11.5px;font-weight:600;color:var(--brand);text-decoration:none;
+}
+.link:hover{text-decoration:underline;}
+.link:disabled{color:var(--muted);cursor:not-allowed;text-decoration:none;}
+
+.field input{
+  width:100%;height:38px;border:1px solid var(--line);border-radius:5px;
+  padding:0 12px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;
+}
+.field input::placeholder{color:#aeb6bd;}
+.field input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px rgba(10,85,120,.15);}
+.field.invalid input{border-color:var(--danger);background:#fdf4f3;}
+.err{display:none;color:var(--danger);font-size:11px;margin-top:5px;}
+.field.invalid .err{display:block;}
+
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-right:38px;}
+.pw-toggle{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  width:30px;height:30px;border:none;background:none;cursor:pointer;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;
+}
+.pw-toggle:hover{color:var(--ink-2);}
+
+.phone-row{display:flex;gap:8px;align-items:center;}
+.field .phone-row select{
+  flex:0 0 68px;width:68px;height:38px;
+  border:1px solid var(--line);border-radius:5px;
+  padding:0 4px 0 8px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink);
+}
+.field .phone-row input{flex:1 1 auto;min-width:0;width:auto;}
+
+.right-link{text-align:right;margin:-6px 0 20px;}
+
+.btn-primary{
+  width:100%;height:38px;border:none;border-radius:5px;
+  background:var(--brand);color:#fff;font-size:13px;font-weight:600;
+  font-family:inherit;cursor:pointer;
+}
+.btn-primary:hover:not(:disabled){background:var(--brand-dark);}
+.btn-primary:disabled{background:var(--disabled);cursor:not-allowed;}
+
+.foot-line{text-align:center;font-size:11.5px;color:var(--muted);margin-top:18px;}
+.foot-line .link{font-size:11.5px;}
+
+/* ============================================================
+   OTP VERIFY  (centred, no split)
+   ============================================================ */
+.verify-wrap{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:64px 24px 90px;background:#fff;
+}
+.verify-box{width:100%;max-width:330px;animation:riseIn var(--dur-enter) var(--ease-out) both;}
+.icon-back{
+  width:30px;height:30px;border-radius:6px;border:1px solid var(--line);
+  background:#fff;color:var(--ink-2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+}
+.icon-back:hover{background:#f6f7f8;}
+.verify-box h2{font-size:20px;font-weight:700;margin:0 0 7px;}
+.verify-box .lead{font-size:12px;color:var(--muted);margin:0 0 26px;line-height:1.5;}
+.otp-row{display:flex;gap:12px;margin-bottom:20px;}
+.otp-row input{
+  flex:1;min-width:0;height:52px;text-align:center;font-size:20px;font-weight:600;
+  border:1px solid var(--line);border-radius:6px;font-family:inherit;color:var(--ink);
+}
+.otp-row input::placeholder{color:#d3d8dc;font-weight:400;}
+.otp-row input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px rgba(10,85,120,.15);}
+.otp-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.otp-timer{font-size:12px;color:var(--ink-2);}
+.otp-timer b{color:var(--brand);font-weight:700;}
+.resend{display:flex;align-items:center;gap:6px;}
+.resend .spin{
+  width:11px;height:11px;border-radius:50%;border:1.5px solid currentColor;
+  border-top-color:transparent;flex:0 0 auto;
+}
+.otp-expired{font-size:11.5px;color:var(--danger);margin:-8px 0 16px;}
+
+/* ============================================================
+   PLACEHOLDER DASHBOARD
+   ============================================================ */
+.dash{flex:1;padding:44px 26px;background:var(--page);}
+.dash-inner{max-width:820px;margin:0 auto;}
+.dash h2{font-size:22px;margin:0 0 8px;}
+.dash p{color:var(--ink-2);font-size:14px;margin:0 0 22px;}
+.dash-card{
+  background:#fff;border:1px dashed var(--line);border-radius:12px;
+  padding:38px 24px;text-align:center;color:var(--muted);font-size:14px;
+}
+.dash .btn-out{
+  margin-top:20px;height:38px;padding:0 18px;border-radius:5px;
+  border:1px solid var(--line);background:#fff;color:var(--ink-2);
+  font-size:13px;font-family:inherit;cursor:pointer;
+}
+
+
+
+
+/* tokens the feature CSS depends on */
+:root{
+  --card-line:#e8ebee;
+  --canvas:#f5f6f7;
+  --heading:#123a5c;
+  --soft:#dbeaf2;
+}
+
+/* ============================================================
+   FEATURE PAGE  (no portal chrome)
+   ============================================================ */
+.page-head{
+  position:sticky;top:0;z-index:20;
+  flex:0 0 auto;display:flex;align-items:center;gap:16px;
+  padding:13px 26px;background:#fff;border-bottom:1px solid #e8ebee;
+}
+.page-head .brandline{display:flex;align-items:center;gap:9px;color:var(--brand);}
+.page-head .brandline .w{
+  font-size:17px;font-weight:700;font-family:Georgia,"Times New Roman",serif;
+}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:13px;}
+.who{text-align:right;line-height:1.25;}
+.who .name{font-size:13px;font-weight:700;}
+.who .mrn{font-size:11.5px;color:var(--muted);}
+.avatar{
+  width:34px;height:34px;border-radius:50%;flex:0 0 auto;
+  background:linear-gradient(135deg,#cfe0ea,#a8c6d8);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--brand);font-size:12px;font-weight:700;
+}
+.btn-out{
+  height:32px;padding:0 14px;border-radius:6px;border:1px solid #e8ebee;background:#fff;
+  color:var(--ink-2);font-size:12.5px;font-family:inherit;cursor:pointer;
+}
+.btn-out:hover{background:#f4f6f7;}
+.page-body{flex:1;background:#f5f6f7;padding:28px 20px 60px;overflow-y:auto;}
+.paper{
+  max-width:640px;margin:0 auto;background:#fff;border:1px solid #e8ebee;
+  border-radius:12px;overflow:hidden;
+  animation:riseIn var(--dur-enter) var(--ease-out) both;
+}
+.paper.booking{display:flex;flex-direction:column;min-height:520px;}
+.paper.booking .drawer-body{overflow:visible;}
+.paper .modal-body{padding:22px;}
+@media (max-width:640px){
+  .page-head{padding:11px 15px;}
+  .page-head .brandline .w{font-size:15px;}
+  .who{display:none;}
+  .page-body{padding:16px 12px 40px;}
+  .paper{border-radius:10px;}
+}
+
+/* ============================================================
+   BOOK APPOINTMENT
+   ============================================================ */
+.drawer-scrim{
+  position:fixed;inset:0;background:rgba(15,22,32,.5);z-index:75;
+  display:none;justify-content:flex-end;
+}
+.drawer-scrim.open{display:flex;animation:fadeIn 180ms var(--ease) both;}
+.drawer{
+  width:min(46%,620px);height:100%;background:#fff;
+  display:flex;flex-direction:column;
+  animation:slideIn 300ms var(--ease-out) both;
+}
+@keyframes slideIn{from{transform:translateX(24px);opacity:0;}to{transform:none;opacity:1;}}
+.drawer-x{
+  position:absolute;top:14px;right:calc(min(46%,620px) + 18px);
+  width:36px;height:36px;border-radius:7px;border:none;background:#fff;
+  color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 12px rgba(20,30,45,.16);
+}
+.drawer-x:hover{background:#f1f3f5;}
+.drawer-top{flex:0 0 auto;padding:18px 26px 0;}
+.drawer-meta{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:11.5px;color:var(--ink-2);}
+.drawer-meta a{color:var(--brand);font-weight:600;}
+.bar{height:6px;border-radius:4px;background:#e6e9ec;margin:10px 0 20px;overflow:hidden;}
+.bar span{display:block;height:100%;background:#2f9b83;transition:width var(--dur-enter) var(--ease-out);}
+.drawer-body{flex:1;overflow-y:auto;padding:0 26px 24px;}
+.drawer-foot{flex:0 0 auto;padding:14px 26px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--card-line);}
+.drawer h3{font-size:17px;font-weight:700;margin:0 0 5px;}
+.drawer .sub{font-size:12.5px;color:var(--ink-2);margin:0 0 20px;line-height:1.5;}
+
+.loc-opt{
+  width:100%;display:flex;align-items:center;gap:16px;text-align:left;
+  border:1px solid var(--card-line);border-radius:10px;background:#fff;
+  padding:16px;margin-bottom:14px;cursor:pointer;font-family:inherit;
+}
+.loc-opt:hover{border-color:#bcd5e2;}
+.loc-opt.on{border-color:var(--brand);background:#f4fafc;}
+.loc-opt .ln{font-size:14px;font-weight:700;margin-bottom:5px;}
+.loc-opt .la{font-size:12px;color:var(--ink-2);line-height:1.55;}
+.radio{
+  width:20px;height:20px;border-radius:50%;border:1.5px solid #cfd5da;flex:0 0 auto;margin-left:auto;
+  display:flex;align-items:center;justify-content:center;
+}
+.loc-opt.on .radio{border-color:var(--brand);}
+.loc-opt.on .radio::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--brand);}
+
+.who-card{
+  border:1px solid var(--card-line);border-left:4px solid #2f9b83;border-radius:10px;
+  padding:18px;margin-bottom:16px;cursor:pointer;background:#fff;width:100%;text-align:left;
+  font-family:inherit;
+}
+.who-card.existing{border-left-color:var(--brand);}
+.who-card:hover{box-shadow:0 4px 14px rgba(20,30,45,.08);}
+.who-card .wt{font-size:15px;font-weight:700;margin-bottom:6px;}
+.who-card .wd{font-size:12.5px;color:var(--ink-2);margin-bottom:14px;}
+.who-card .wa{color:var(--ink-2);}
+.who-foot{border-top:1px solid var(--card-line);margin-top:6px;padding-top:16px;text-align:center;}
+
+.bk-field{margin-bottom:18px;}
+.bk-field label{display:block;font-size:12px;font-weight:600;margin-bottom:7px;}
+.bk-field label .req{color:var(--danger);}
+.bk-field select{
+  width:100%;height:44px;border:1px solid var(--card-line);border-radius:7px;
+  padding:0 12px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;
+}
+.bk-field select.empty{color:#aeb6bd;}
+.bk-field select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px rgba(10,85,120,.15);}
+.hint-line{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);margin-top:-8px;}
+
+.cal{border:1px solid var(--card-line);border-radius:10px;padding:14px;margin-bottom:16px;}
+.cal-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.cal-head .mo{font-size:16px;font-weight:700;flex:1;}
+.cal-head button{
+  width:28px;height:28px;border-radius:6px;border:1px solid var(--card-line);background:#fff;
+  color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.cal-head .today{width:auto;padding:0 11px;font-size:11.5px;font-family:inherit;}
+.cal-head button:hover{background:#f6f8f9;}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+.dow span{text-align:center;font-size:12px;font-weight:600;color:var(--ink-2);padding:4px 0;}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.day{
+  aspect-ratio:1;border:none;background:none;border-radius:6px;cursor:pointer;
+  font-family:inherit;font-size:14px;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+}
+.day:hover:not(:disabled){background:#eef4f7;}
+.day.out{color:#c8cfd5;}
+.day.on{background:var(--brand);color:#fff;font-weight:700;}
+.day:disabled{color:#d6dbe0;cursor:not-allowed;}
+.day.has::after{
+  content:'';position:absolute;transform:translateY(12px);
+  width:4px;height:4px;border-radius:50%;background:#2f9b83;
+}
+.day{position:relative;}
+.day.on.has::after{background:#fff;}
+
+.slots-title{font-size:12.5px;font-weight:600;margin:0 0 10px;}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:9px;}
+.slot{
+  height:38px;border:1px solid var(--card-line);border-radius:7px;background:#fff;
+  font-size:12.5px;font-family:inherit;color:var(--ink);cursor:pointer;
+}
+.slot:hover{border-color:var(--brand);background:#f4fafc;}
+.slot.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;}
+
+.no-slots{text-align:center;padding:6px 0 0;}
+.no-slots .t{font-size:12.5px;font-weight:700;margin-bottom:8px;}
+.no-slots .n{font-size:11.5px;color:#b0731a;line-height:1.6;margin-bottom:16px;}
+.no-slots .n a{color:#b0731a;font-weight:600;}
+.btn-wide{
+  width:100%;height:40px;border-radius:7px;border:none;background:var(--brand);
+  color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
+  text-decoration:underline;margin-bottom:10px;
+}
+.btn-wide:hover{background:var(--brand-dark);}
+.btn-wide.ghost{
+  background:#fff;border:1px solid var(--brand);color:var(--brand);text-decoration:none;
+}
+.btn-wide.ghost:hover{background:#f4fafc;}
+.link-center{
+  display:block;margin:0 auto;background:none;border:none;cursor:pointer;font-family:inherit;
+  font-size:12px;color:var(--brand);text-decoration:underline;
+}
+.btn-next{
+  width:100%;height:44px;border-radius:7px;border:none;background:var(--brand);
+  color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;
+}
+.btn-next:hover:not(:disabled){background:var(--brand-dark);}
+.btn-next:disabled{background:#eceef0;color:#9aa4ad;cursor:not-allowed;}
+
+@media (max-width:900px){
+  .drawer{width:100%;}
+  .drawer-x{right:auto;left:14px;}
+}
+
+
+/* existing-patient flow */
+.drawer-back{
+  border:none;background:none;padding:0;cursor:pointer;color:var(--ink);
+  display:flex;align-items:center;
+}
+.drawer-back:hover{color:var(--brand);}
+.vtabs{display:flex;border-bottom:1px solid var(--card-line);margin-bottom:22px;}
+.vtabs button{
+  flex:1;border:none;background:none;padding:11px 0;cursor:pointer;font-family:inherit;
+  font-size:13px;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.vtabs button.on{color:var(--brand);font-weight:600;border-bottom-color:var(--brand);}
+.v-input{
+  width:100%;height:44px;border:1px solid var(--card-line);border-radius:7px;
+  padding:0 13px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;
+  margin-bottom:20px;
+}
+.v-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px rgba(10,85,120,.15);}
+.btn-round{
+  width:100%;height:44px;border-radius:22px;border:none;background:var(--brand);
+  color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;
+}
+.btn-round:hover:not(:disabled){background:var(--brand-dark);}
+.btn-round:disabled{background:#eceef0;color:#9aa4ad;cursor:not-allowed;}
+
+.otp4{display:flex;gap:14px;margin-bottom:14px;}
+.otp4 input{
+  flex:1;min-width:0;height:44px;text-align:center;font-size:16px;font-weight:600;
+  border:1px solid var(--card-line);border-radius:7px;font-family:inherit;color:var(--ink);
+}
+.otp4 input::placeholder{color:#c8cfd5;font-weight:400;}
+.otp4 input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px rgba(10,85,120,.15);}
+.otp-exp{text-align:center;font-size:11.5px;color:var(--ink-2);margin:0 0 20px;}
+.otp-exp b{color:var(--brand);}
+
+.pt-opt{
+  width:100%;display:flex;align-items:center;gap:13px;text-align:left;
+  border:1px solid var(--card-line);border-radius:9px;background:#fff;
+  padding:13px 15px;margin-bottom:11px;cursor:pointer;font-family:inherit;
+}
+.pt-opt:hover{border-color:#bcd5e2;}
+.pt-opt.on{border-color:var(--brand);background:#f4fafc;}
+.pt-av{
+  width:38px;height:38px;border-radius:50%;background:#e4eaf0;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;color:#8b97a4;
+}
+.pt-opt .pn{font-size:13.5px;font-weight:600;}
+.pt-opt .pe{font-size:11.5px;color:var(--muted);margin-top:2px;}
+
+.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;margin-bottom:18px;}
+.d-grid .full{grid-column:1 / -1;}
+.d-grid label{display:block;font-size:11.5px;font-weight:600;margin-bottom:6px;}
+.d-grid label .req{color:var(--danger);}
+.d-grid input,.d-grid select{
+  width:100%;height:40px;border:1px solid var(--card-line);border-radius:7px;
+  padding:0 12px;font-size:12.5px;font-family:inherit;color:var(--ink);background:#fff;
+}
+.d-grid select.empty{color:#aeb6bd;}
+.d-grid input:focus,.d-grid select:focus{
+  outline:none;border-color:var(--brand);box-shadow:0 0 0 2px rgba(10,85,120,.15);
+}
+.d-grid .bad input,.d-grid .bad select{border-color:var(--danger);background:#fdf4f3;}
+.d-err{display:none;color:var(--danger);font-size:11px;margin-top:4px;}
+.d-grid .bad .d-err{display:block;}
+
+.switch-row{display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:6px;}
+.switch{
+  width:38px;height:21px;border-radius:12px;background:#d5dade;flex:0 0 auto;
+  position:relative;transition:background var(--dur-ui) var(--ease);
+}
+.switch::after{
+  content:'';position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:transform var(--dur-ui) var(--ease);
+}
+.switch-row input{display:none;}
+.switch-row input:checked + .switch{background:var(--brand);}
+.switch-row input:checked + .switch::after{transform:translateX(17px);}
+.switch-row span{font-size:12.5px;color:var(--ink);}
+
+.mini-modal{text-align:center;padding:28px 26px 22px;}
+.mini-modal h3{font-size:17px;font-weight:700;margin:0 0 10px;}
+.mini-modal p{font-size:12.5px;color:var(--ink-2);margin:0 0 22px;line-height:1.6;}
+.mini-modal button{
+  width:100%;height:40px;border-radius:7px;border:none;background:#f1f3f5;
+  color:var(--ink-2);font-size:13px;font-family:inherit;cursor:pointer;
+}
+.mini-modal button:hover{background:#e7eaec;}
+
+
+/* ============================================================
+   BASE MODAL
+   ============================================================ */
+/* ---------- detail modal ---------- */
+.modal-scrim{
+  position:fixed;inset:0;background:rgba(15,22,32,.5);z-index:60;
+  display:none;align-items:center;justify-content:center;padding:26px 18px;
+}
+.modal-scrim.open{display:flex;animation:fadeIn 180ms var(--ease) both;}
+
+/* modals launched from inside the booking drawer must sit above it */
+#who-modal,#mini-modal{z-index:85;}
+
+.modal{
+  width:100%;max-width:560px;max-height:100%;background:#fff;border-radius:12px;
+  display:flex;flex-direction:column;overflow:hidden;
+  animation:riseIn 300ms var(--ease-out) both;
+}
+.modal-head{
+  flex:0 0 auto;background:var(--brand);color:#fff;
+  display:flex;align-items:center;gap:12px;padding:15px 18px;
+}
+.modal-head .mh-title{font-size:15px;font-weight:600;}
+.modal-head .close{
+  margin-left:auto;border:none;background:none;color:#fff;cursor:pointer;
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+}
+.modal-head .close:hover{background:rgba(255,255,255,.16);}
+.modal-body{flex:1;overflow-y:auto;padding:18px;}
+.modal-foot{
+  flex:0 0 auto;display:flex;gap:12px;padding:14px 18px;
+  border-top:1px solid var(--card-line);background:#fff;
+}
+.modal-foot button{flex:1;height:40px;font-size:13.5px;}
+
+/* the feature screen stacks header over content */
+#screen-app{flex-direction:column;}
+/* the login bar belongs to the login screens only */
+.app.signed-in .topbar{display:none;}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%);
+  background:var(--ink);color:#fff;font-size:13px;padding:11px 18px;
+  border-radius:7px;z-index:95;opacity:0;pointer-events:none;
+  transition:opacity var(--dur-ui) var(--ease),transform var(--dur-ui) var(--ease);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="tec">
+      <svg width="40" height="21" viewBox="0 0 40 21" fill="none" aria-hidden="true">
+        <path d="M1.5 11c6.5-9 17.5-9 24 0-6.5 7.5-17.5 7.5-24 0z" fill="#fff"/>
+        <circle cx="13" cy="10.3" r="4.3" fill="#0a5578"/>
+        <path d="M13 6.9l.85 1.8 1.95.25-1.45 1.3.37 1.95L13 11.25l-1.72.95.37-1.95-1.45-1.3 1.95-.25z" fill="#fff"/>
+      </svg>
+      <div class="word">Healthcare</div>
+    </div>
+  </header>
+
+
+  <!-- ================= SCREEN 2 — REQUEST OTP ================= -->
+  <section class="screen active" id="screen-request">
+    <div class="split">
+      <div class="brand-pane">
+        <div class="pattern" data-pattern></div>
+        <div class="copy">
+          <h1>Experience Clarity</h1>
+          <p>Sign in to manage your visits and care details with Healthcare.</p>
+        </div>
+        <div class="powered"><span class="mark">H</span> Powered by Healthcare</div>
+      </div>
+
+      <div class="form-pane">
+        <div class="form-box centered">
+          <div class="badge-icon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2.6" width="16" height="18.8" rx="2.4"/>
+              <circle cx="12" cy="10" r="2.6"/>
+              <path d="M7.8 17.6c.9-1.9 2.5-2.8 4.2-2.8s3.3.9 4.2 2.8"/>
+            </svg>
+          </div>
+
+          <h2>Enter the mobile number you've registered with us</h2>
+          <p class="lead">We'll send a code to the provided registered number</p>
+
+          <div class="field" data-field="mobile">
+            <div class="label-row"><label for="mobile">Mobile number<span class="req">*</span></label></div>
+            <div class="phone-row">
+              <select id="cc" aria-label="Country code">
+                <option value="+1" selected>+1</option>
+                <option value="+91">+91</option>
+                <option value="+44">+44</option>
+              </select>
+              <input id="mobile" type="tel" inputmode="numeric" placeholder="(090) 000-0000" />
+            </div>
+            <div class="err">Enter a 10-digit mobile number</div>
+          </div>
+
+          <button class="btn-primary" id="btn-request" type="button">Request OTP</button>
+
+        </div>
+
+        <div class="legal">
+          © 2025 Healthcare &nbsp;
+          <a href="#" data-soon="Privacy policy">Privacy Policy</a> and
+          <a href="#" data-soon="Terms of service">Terms of Service</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ================= SCREEN 3 — VERIFY OTP ================= -->
+  <section class="screen" id="screen-verify">
+    <div class="verify-wrap">
+      <div class="verify-box">
+        <button class="icon-back" type="button" id="verify-back" aria-label="Back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+
+        <h2>Please Enter OTP</h2>
+        <p class="lead">Enter the code we sent to your mobile <span id="masked-number">+1 (909) **** 0900</span></p>
+
+        <div class="otp-row" id="otp-row">
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 1" />
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 2" />
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 3" />
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 4" />
+        </div>
+
+        <div class="otp-expired" id="otp-expired" hidden>That code has expired. Request a new one.</div>
+
+        <div class="otp-meta">
+          <span class="otp-timer" id="otp-timer">OTP Expires in <b>02:59</b></span>
+          <button class="link resend" type="button" id="btn-resend" disabled>
+            <span class="spin"></span> Resend OTP
+          </button>
+        </div>
+
+        <button class="btn-primary" id="btn-verify" type="button" disabled>Verify OTP</button>
+      </div>
+    </div>
+  </section>
+
+
+
+
+  <!-- ================= FEATURE PAGE ================= -->
+  <section class="screen" id="screen-app">
+    <div class="page-head">
+      <div class="brandline">
+        <svg width="30" height="16" viewBox="0 0 40 21" fill="none" aria-hidden="true">
+          <path d="M1.5 11c6.5-9 17.5-9 24 0-6.5 7.5-17.5 7.5-24 0z" fill="currentColor"/>
+          <circle cx="13" cy="10.3" r="4.3" fill="#fff"/>
+          <path d="M13 6.9l.85 1.8 1.95.25-1.45 1.3.37 1.95L13 11.25l-1.72.95.37-1.95-1.45-1.3 1.95-.25z" fill="currentColor"/>
+        </svg>
+        <span class="w">Healthcare</span>
+      </div>
+      <div class="head-right">
+        <div class="who">
+          <div class="name" id="who-name">Josephine Langford</div>
+          <div class="mrn" id="who-mrn">MR1224567</div>
+        </div>
+        <div class="avatar" id="who-initials">JL</div>
+        <button class="btn-out" type="button" id="sign-out">Sign out</button>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="paper booking">
+        <div class="drawer-top" id="bk-top"></div>
+        <div class="drawer-body" id="bk-body"></div>
+        <div class="drawer-foot" id="bk-foot"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal-scrim" id="who-modal" role="dialog" aria-modal="true" aria-labelledby="who-title">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-body" style="padding:30px 26px 22px;text-align:center;">
+      <h3 id="who-title" style="font-size:20px;font-weight:700;margin:0 0 6px;">Let's Get Started</h3>
+      <p style="font-size:13px;color:var(--ink-2);margin:0 0 24px;">Are you a new or existing patient?</p>
+
+      <button class="who-card" type="button" id="who-new">
+        <div class="wt">New Patient</div>
+        <div class="wd">Create your account and browse available appointments</div>
+        <span class="wa">&rarr;</span>
+      </button>
+
+      <button class="who-card existing" type="button" id="who-existing">
+        <div class="wt">Existing Patient</div>
+        <div class="wd">Sign in to your existing account</div>
+        <span class="wa">&rarr;</span>
+      </button>
+
+      <div class="who-foot">
+        <button class="link-center" type="button" id="who-back" style="text-decoration:none;color:var(--ink-2);">
+          &larr; Change Organization
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-scrim" id="mini-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:340px;">
+    <div class="mini-modal">
+      <h3 id="mini-title"></h3>
+      <p id="mini-text"></p>
+      <button type="button" id="mini-ok">Go back to home</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-scrim" id="mini-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:340px;">
+    <div class="mini-modal">
+      <h3 id="mini-title"></h3>
+      <p id="mini-text"></p>
+      <button type="button" id="mini-ok">Go back to home</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+const state = { countryCode: '+1', mobile: '', expiry: null, timerId: null,
+                otpPurpose: 'login', signup: {} };
+
+function isoToday() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function toast(message) {
+  const el = $('#toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function bindSoon(root = document) {
+  $$('[data-soon]', root).forEach(el => {
+    if (el.dataset.soonBound) return;
+    el.dataset.soonBound = '1';
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      toast(`${el.dataset.soon} isn't part of this prototype.`);
+    });
+  });
+}
+bindSoon();
+
+/* ============================================================
+   1. BACKGROUND PATTERN — embossed rounded squares
+   ============================================================ */
+function paintPattern(host) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  svg.setAttribute('viewBox', '0 0 600 700');
+
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML = `
+    <filter id="emboss" x="-30%" y="-30%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#9aa4ad" flood-opacity="0.28"/>
+    </filter>`;
+  svg.appendChild(defs);
+
+  // deterministic pseudo-random so the layout is stable between reloads
+  let seed = 20240917;
+  const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+
+  const cell = 74;
+  for (let y = -1; y < 11; y++) {
+    for (let x = -1; x < 9; x++) {
+      if (rand() > 0.62) continue;                 // leave gaps
+      const size = 34 + rand() * 30;
+      const cx = x * cell + rand() * 26;
+      const cy = y * cell + rand() * 26;
+      const rect = document.createElementNS(NS, 'rect');
+      rect.setAttribute('x', cx.toFixed(1));
+      rect.setAttribute('y', cy.toFixed(1));
+      rect.setAttribute('width', size.toFixed(1));
+      rect.setAttribute('height', size.toFixed(1));
+      rect.setAttribute('rx', (size * 0.24).toFixed(1));
+      rect.setAttribute('fill', '#fbfbfc');
+      rect.setAttribute('filter', 'url(#emboss)');
+      rect.setAttribute('opacity', (0.55 + rand() * 0.45).toFixed(2));
+      svg.appendChild(rect);
+    }
+  }
+  host.appendChild(svg);
+}
+$$('[data-pattern]').forEach(paintPattern);
+
+/* ============================================================
+   2. SCREENS
+   ============================================================ */
+function show(id) {
+  $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  $('.app').classList.toggle('signed-in', id === 'screen-app');
+  window.scrollTo(0, 0);
+}
+
+function toast(message) {
+  const el = $('#toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+$$('[data-goto]').forEach(el =>
+  el.addEventListener('click', () => show(el.dataset.goto)));
+
+function bindSoon(root = document) {
+  $$('[data-soon]', root).forEach(el => {
+    if (el.dataset.soonBound) return;
+    el.dataset.soonBound = '1';
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      toast(`${el.dataset.soon} isn't designed yet.`);
+    });
+  });
+}
+bindSoon();
+
+/* ============================================================
+   4. REQUEST OTP
+   ============================================================ */
+// US format, digits only: (090) 000-0000
+function maskPhone(raw) {
+  const d = raw.replace(/\D/g, '').slice(0, 10);
+  if (d.length <= 3) return d ? `(${d}` : '';
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+const mobile = $('#mobile');
+mobile.addEventListener('input', () => {
+  mobile.value = maskPhone(mobile.value);
+  $('[data-field="mobile"]').classList.remove('invalid');
+});
+mobile.addEventListener('keydown', e => {
+  if (e.key.length === 1 && !/\d/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+});
+
+$('#btn-request').addEventListener('click', () => {
+  const digits = mobile.value.replace(/\D/g, '');
+  if (digits.length !== 10) {
+    $('[data-field="mobile"]').classList.add('invalid');
+    mobile.focus();
+    return;
+  }
+  state.otpPurpose = 'login';
+  state.countryCode = $('#cc').value;
+  state.mobile = digits;
+  $('#masked-number').textContent =
+    `${state.countryCode} (${digits.slice(0, 3)}) **** ${digits.slice(6)}`;
+  startOtp();
+  show('screen-verify');
+  otpBoxes[0].focus();
+});
+
+/* ============================================================
+   5. VERIFY OTP
+   ============================================================ */
+const otpBoxes = $$('#otp-row input');
+
+otpBoxes.forEach((box, i) => {
+  box.addEventListener('input', () => {
+    box.value = box.value.replace(/\D/g, '');
+    if (box.value && i < otpBoxes.length - 1) otpBoxes[i + 1].focus();
+    refreshVerifyButton();
+  });
+  box.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !box.value && i > 0) otpBoxes[i - 1].focus();
+  });
+  box.addEventListener('paste', e => {
+    const text = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+    if (!text) return;
+    e.preventDefault();
+    [...text].forEach((ch, n) => { if (otpBoxes[n]) otpBoxes[n].value = ch; });
+    otpBoxes[Math.min(text.length, 3)].focus();
+    refreshVerifyButton();
+  });
+});
+
+function refreshVerifyButton() {
+  const filled = otpBoxes.every(b => b.value);
+  $('#btn-verify').disabled = !filled || state.expiry === 0;
+}
+
+function startOtp() {
+  clearInterval(state.timerId);
+  state.expiry = 179;                                    // 02:59
+  otpBoxes.forEach(b => (b.value = ''));
+  $('#otp-expired').hidden = true;
+  $('#btn-resend').disabled = true;
+  refreshVerifyButton();
+  tick();
+  state.timerId = setInterval(tick, 1000);
+}
+
+function tick() {
+  const t = state.expiry;
+  const mm = String(Math.floor(t / 60)).padStart(2, '0');
+  const ss = String(t % 60).padStart(2, '0');
+  $('#otp-timer').innerHTML = `OTP Expires in <b>${mm}:${ss}</b>`;
+
+  if (t <= 0) {
+    clearInterval(state.timerId);
+    $('#otp-timer').innerHTML = 'OTP expired';
+    $('#otp-expired').hidden = false;
+    $('#btn-resend').disabled = false;
+    $('#btn-verify').disabled = true;
+    return;
+  }
+  state.expiry--;
+}
+
+$('#btn-resend').addEventListener('click', () => {
+  startOtp();
+  otpBoxes[0].focus();
+  toast('A new code has been sent.');
+});
+
+$('#btn-verify').addEventListener('click', () => {
+  clearInterval(state.timerId);
+  paintIdentity();
+  onVerified();                                          // prototype: any 4 digits pass
+});
+
+$('#verify-back').addEventListener('click', () => {
+  clearInterval(state.timerId);
+  show('screen-request');
+});
+
+
+// show the number the patient just verified
+function paintIdentity() {
+  if (state.mobile) $('#who-mrn').textContent = maskPhone(state.mobile);
+}
+
+/* ============================================================
+   19. BOOK APPOINTMENT
+   ============================================================ */
+const CLINICS = [
+  { id: 'c1', name: 'Tech Eye Care',
+    address: '201, california Dallas, Texas - 75201', phone: '(234) 353-4547' },
+  { id: 'c2', name: 'Red Oak-Modern Focus Eyecare',
+    address: '123 Main Street, Beach Road Los Angeles, California - 90001', phone: '(873) 873-6688' }
+];
+
+const REASONS  = ['Annual Eye Exam','Cataract Consultation','Glaucoma Screening',
+                  'LASIK Consultation','Dry Eye Evaluation','Post-Op Follow-up','Other'];
+const PAYORS_B = ['Blue Cross Blue Shield','Aetna','UnitedHealthcare','Medicare','Self Pay'];
+const PROVIDERS = ['No Preference','Dr. Evelyn Reed','Dr. Steve Smith','Dr. Marcus Lee','Dr. Sarah Kim'];
+
+const booking = {
+  step: 'location', clinic: null, reason: '', payor: '',
+  provider: '', month: new Date(), date: null, slot: null
+};
+
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** Deterministic mock availability so the same date always behaves the same. */
+function slotsFor(dateIso) {
+  const d = new Date(dateIso + 'T00:00:00');
+  const day = d.getDay();
+  if (day === 0) return [];                                   // closed Sundays
+  const seed = d.getDate() + d.getMonth();
+  if (seed % 4 === 0) return [];                              // fully booked
+  const all = ['09:00 AM','09:30 AM','10:00 AM','10:30 AM','11:00 AM',
+               '01:00 PM','01:30 PM','02:00 PM','02:30 PM','03:00 PM','03:30 PM','04:00 PM'];
+  return all.filter((_, i) => (i + seed) % 3 !== 0);
+}
+
+function openBooking() {
+  Object.assign(booking, { step: 'location', clinic: null, reason: '', payor: '',
+                           provider: '', month: new Date(), date: null, slot: null });
+  paintBooking();
+}
+
+// finishing or cancelling returns to the clinic picker
+function closeBooking() {
+  clearInterval(bkOtpTimer);
+  $('#who-modal').classList.remove('open');
+  openBooking();
+}
+
+/* ---------- drawer chrome ---------- */
+function drawerHeader(step) {
+  if (!step) return '';
+  return `
+    <div class="drawer-meta">
+      <span>Step ${step} of 2</span>
+      <span>Need help? Contact Support at <a href="#" data-soon="Support">469-505-2020</a></span>
+    </div>
+    <div class="bar"><span style="width:${step === 1 ? 50 : 100}%"></span></div>`;
+}
+
+function paintBooking() {
+  const view = BK_VIEWS[booking.step]();
+  $('#bk-top').innerHTML = view.header ?? '';
+  $('#bk-body').innerHTML = view.body;
+  $('#bk-foot').innerHTML = view.foot ?? '';
+  view.bind?.();
+  bindSoon($('#screen-app'));
+  $('#bk-body').scrollTop = 0;
+}
+
+/* ---------- 1. clinic location ---------- */
+const bkLocation = () => ({
+  header: '',
+  body: `
+    <h3 style="margin-top:6px;">Choose Your Clinic Location</h3>
+    <p class="sub">Please select the office where you would like to have your appointment.</p>
+    ${CLINICS.map(c => `
+      <button class="loc-opt ${booking.clinic === c.id ? 'on' : ''}" type="button" data-clinic="${c.id}">
+        <span>
+          <span class="ln">${c.name}</span>
+          <span class="la">${c.address}<br />Phone: <b>${c.phone}</b></span>
+        </span>
+        <span class="radio"></span>
+      </button>`).join('')}`,
+  bind() {
+    $$('[data-clinic]').forEach(b => b.addEventListener('click', () => {
+      booking.clinic = b.dataset.clinic;
+      paintBooking();
+      setTimeout(() => {                       // let the selection register first
+        $('#who-modal').classList.add('open');
+      }, 220);
+    }));
+  }
+});
+
+/* ---------- 2. reason and payor ---------- */
+const bkReason = () => ({
+  header: drawerHeader(1),
+  body: `
+    <h3>What is the reason for your visit?</h3>
+    <p class="sub">Select your reason for the visit from the options below.</p>
+
+    <div class="bk-field">
+      <label for="bk-reason">Reason Category<span class="req">*</span></label>
+      <select id="bk-reason" class="${booking.reason ? '' : 'empty'}">
+        <option value="">Select</option>
+        ${REASONS.map(r => `<option ${booking.reason === r ? 'selected' : ''}>${r}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="bk-field">
+      <label for="bk-payor">Payor</label>
+      <select id="bk-payor" class="${booking.payor ? '' : 'empty'}">
+        <option value="">Enter Payor Name</option>
+        ${PAYORS_B.map(r => `<option ${booking.payor === r ? 'selected' : ''}>${r}</option>`).join('')}
+      </select>
+    </div>`,
+  foot: `<button class="btn-next" type="button" id="bk-next" ${booking.reason ? '' : 'disabled'}>Next</button>`,
+  bind() {
+    const sync = () => {
+      booking.reason = $('#bk-reason').value;
+      booking.payor  = $('#bk-payor').value;
+      $('#bk-reason').classList.toggle('empty', !booking.reason);
+      $('#bk-payor').classList.toggle('empty', !booking.payor);
+      $('#bk-next').disabled = !booking.reason;
+    };
+    $('#bk-reason').addEventListener('change', sync);
+    $('#bk-payor').addEventListener('change', sync);
+    $('#bk-next').addEventListener('click', () => {
+      booking.step = 'datetime';
+      paintBooking();
+    });
+  }
+});
+
+/* ---------- 3. provider, date and slots ---------- */
+const bkDateTime = () => {
+  const picked = booking.date;
+  const slots = picked ? slotsFor(picked) : [];
+
+  return {
+    header: drawerHeader(2),
+    body: `
+      <h3>Select date and time</h3>
+      <p class="sub">Choose a provider first — dates and time slots load once you pick one</p>
+
+      <div class="bk-field">
+        <label for="bk-provider">Preferred Provider<span class="req">*</span></label>
+        <select id="bk-provider" class="${booking.provider ? '' : 'empty'}">
+          <option value="">Choose from the dropdown list</option>
+          ${PROVIDERS.map(p => `<option ${booking.provider === p ? 'selected' : ''}>${p}</option>`).join('')}
+        </select>
+      </div>
+
+      ${!booking.provider ? `
+        <p class="hint-line">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 11v5M12 8.2v.2"/></svg>
+          Select a provider to see available dates and time slots
+        </p>` : calendarHTML() + (
+          !picked ? ''
+          : slots.length ? `
+            <p class="slots-title">Available slots</p>
+            <div class="slots">
+              ${slots.map(t => `<button class="slot ${booking.slot === t ? 'on' : ''}" type="button" data-slot="${t}">${t}</button>`).join('')}
+            </div>`
+          : `<div class="no-slots">
+               <p class="t">No slots available for this date</p>
+               <p class="n">Don't worry, we'll help you find another time. If you join the waitlist,
+                 we'll notify you if a slot opens. Need help? Call
+                 <a href="#" data-soon="Support">469 505 2020</a>.</p>
+               <button class="btn-wide" type="button" id="bk-nextslot">See Next Available Slot</button>
+               <button class="btn-wide ghost" type="button" id="bk-waitlist">Join Waitlist for This Date</button>
+               <button class="link-center" type="button" id="bk-callback">Request a Callback</button>
+             </div>`
+        )}`,
+    foot: booking.slot
+      ? `<button class="btn-next" type="button" id="bk-confirm">Book Appointment</button>`
+      : `<button class="btn-next" type="button" disabled>Book Appointment</button>`,
+    bind() {
+      $('#bk-provider').addEventListener('change', e => {
+        booking.provider = e.target.value;
+        booking.date = null;
+        booking.slot = null;
+        paintBooking();
+      });
+
+      bindCalendar();
+
+      $$('[data-slot]').forEach(b => b.addEventListener('click', () => {
+        booking.slot = b.dataset.slot;
+        paintBooking();
+      }));
+
+      const nextSlot = $('#bk-nextslot');
+      if (nextSlot) nextSlot.addEventListener('click', () => {
+        // walk forward until a date with availability turns up
+        const d = new Date(booking.date + 'T00:00:00');
+        for (let i = 1; i <= 60; i++) {
+          d.setDate(d.getDate() + 1);
+          if (slotsFor(iso(d)).length) {
+            booking.month = new Date(d);
+            booking.date = iso(d);
+            booking.slot = null;
+            paintBooking();
+            return;
+          }
+        }
+        toast('No availability in the next 60 days.');
+      });
+
+      const wait = $('#bk-waitlist');
+      if (wait) wait.addEventListener('click', () => miniModal(
+        "You're on the waitlist!",
+        "We'll notify you as soon as a slot opens on this date."));
+
+      const callback = $('#bk-callback');
+      if (callback) callback.addEventListener('click', () => miniModal(
+        "We'll call you back!",
+        'Our team will call you shortly to help you book an appointment over the phone.'));
+
+      const confirm = $('#bk-confirm');
+      if (confirm) confirm.addEventListener('click', () => {
+        booking.step = 'done';
+        paintBooking();
+      });
+    }
+  };
+};
+
+function calendarHTML() {
+  const m = booking.month;
+  const year = m.getFullYear(), month = m.getMonth();
+  const first = new Date(year, month, 1);
+  const start = new Date(first);
+  start.setDate(1 - first.getDay());                 // back up to Sunday
+
+  const today = iso(new Date());
+  const cells = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const key = iso(d);
+    const out = d.getMonth() !== month;
+    const past = key < today;
+    const has = !past && !out && slotsFor(key).length > 0;
+    cells.push(`
+      <button class="day ${out ? 'out' : ''} ${booking.date === key ? 'on' : ''} ${has ? 'has' : ''}"
+              type="button" data-day="${key}" ${past || out ? 'disabled' : ''}>${d.getDate()}</button>`);
+  }
+
+  const label = m.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  return `
+    <div class="cal">
+      <div class="cal-head">
+        <span class="mo">${label}</span>
+        <button class="today" type="button" data-cal="today">Today</button>
+        <button type="button" data-cal="prev" aria-label="Previous month">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <button type="button" data-cal="next" aria-label="Next month">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <div class="dow">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<span>${d}</span>`).join('')}</div>
+      <div class="days">${cells.join('')}</div>
+    </div>`;
+}
+
+function bindCalendar() {
+  $$('[data-cal]').forEach(b => b.addEventListener('click', () => {
+    const move = b.dataset.cal;
+    if (move === 'today') booking.month = new Date();
+    else booking.month = new Date(booking.month.getFullYear(),
+                                  booking.month.getMonth() + (move === 'next' ? 1 : -1), 1);
+    paintBooking();
+  }));
+
+  $$('[data-day]').forEach(b => b.addEventListener('click', () => {
+    booking.date = b.dataset.day;
+    booking.slot = null;
+    paintBooking();
+  }));
+}
+
+/* ---------- 4. confirmation ---------- */
+const bkDone = () => {
+  const clinic = CLINICS.find(c => c.id === booking.clinic);
+  const when = new Date(booking.date + 'T00:00:00')
+    .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  return {
+    header: '',
+    body: `
+      <div class="pay-done" style="padding-top:44px;">
+        <div class="tick">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </div>
+        <h3>Appointment requested</h3>
+        <p>We'll confirm your booking by text and email shortly.</p>
+        <div class="receipt">
+          <div class="row"><span class="k">Clinic</span><span class="v">${clinic.name}</span></div>
+          <div class="row"><span class="k">Reason</span><span class="v">${booking.reason}</span></div>
+          <div class="row"><span class="k">Provider</span><span class="v">${booking.provider}</span></div>
+          <div class="row"><span class="k">Date</span><span class="v">${when}</span></div>
+          <div class="row"><span class="k">Time</span><span class="v">${booking.slot}</span></div>
+        </div>
+      </div>`,
+    foot: `<button class="btn-next" type="button" id="bk-done">Done</button>`,
+    bind() { $('#bk-done').addEventListener('click', closeBooking); }
+  };
+};
+
+
+
+/* ============================================================
+   19b. EXISTING PATIENT PATH
+   ============================================================ */
+const PATIENTS = [
+  { id: 'p1', name: 'David C. Shipman', email: 'po****r@gmail.com',
+    first: 'David', last: 'C. Shipman', dob: '2004-02-26', gender: 'Male',
+    phone: '(999) 999-9999', mail: 'portaluser@gmail.com' },
+  { id: 'p2', name: 'Dan Luka',       email: '' },
+  { id: 'p3', name: 'Mamitha Baiju',  email: 'na****5@gmail.com' },
+  { id: 'p4', name: 'test rim',       email: '' },
+  { id: 'p5', name: 'test jerry',     email: '' },
+  { id: 'p6', name: 'test esac',      email: '' },
+  { id: 'p7', name: 'Radha Sri',      email: '' },
+  { id: 'p8', name: 'prasad m',       email: 'pr****m@gmail.com' },
+  { id: 'p9', name: 'chitti r',       email: 'ch****r@gmail.com' }
+];
+
+Object.assign(booking, { channel: 'phone', contact: '', patient: null, details: {}, otpLeft: 180 });
+let bkOtpTimer = null;
+
+function backBar() {
+  return `
+    <div class="drawer-meta">
+      <button class="drawer-back" type="button" data-bkback aria-label="Back">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      </button>
+      <span>Need help? Contact Support at <a href="#" data-soon="Support">(234) 353-4547</a></span>
+    </div>
+    <div style="height:14px"></div>`;
+}
+
+function goBack(step) {
+  clearInterval(bkOtpTimer);
+  booking.step = step;
+  paintBooking();
+}
+
+/* ---------- 1. verification ---------- */
+const bkVerify = () => ({
+  header: backBar(),
+  body: `
+    <h3>Verification</h3>
+    <p class="sub">Please enter your email or mobile number to begin</p>
+
+    <div class="vtabs">
+      <button type="button" class="${booking.channel === 'phone' ? 'on' : ''}" data-ch="phone">Phone Number</button>
+      <button type="button" class="${booking.channel === 'email' ? 'on' : ''}" data-ch="email">Email</button>
+    </div>
+
+    <input class="v-input" id="bk-contact" type="${booking.channel === 'phone' ? 'tel' : 'email'}"
+           placeholder="${booking.channel === 'phone' ? '(555) 555-5555' : 'you@example.com'}"
+           value="${booking.contact}" />`,
+  foot: `<button class="btn-round" type="button" id="bk-sendotp">Send OTP</button>`,
+  bind() {
+    $$('[data-bkback]').forEach(b => b.addEventListener('click', () => goBack('location')));
+
+    $$('[data-ch]').forEach(b => b.addEventListener('click', () => {
+      booking.channel = b.dataset.ch;
+      booking.contact = '';
+      paintBooking();
+    }));
+
+    const input = $('#bk-contact');
+    if (booking.channel === 'phone') {
+      input.addEventListener('input', () => {
+        input.value = maskPhone(input.value);
+        booking.contact = input.value;
+      });
+      input.addEventListener('keydown', e => {
+        if (e.key.length === 1 && !/\d/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+      });
+    } else {
+      input.addEventListener('input', () => booking.contact = input.value);
+    }
+
+    $('#bk-sendotp').addEventListener('click', () => {
+      const v = booking.contact.trim();
+      const ok = booking.channel === 'phone'
+        ? v.replace(/\D/g, '').length === 10
+        : /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(v);
+      if (!ok) {
+        toast(booking.channel === 'phone'
+          ? 'Enter a 10-digit mobile number.' : 'Enter a valid email address.');
+        return;
+      }
+      booking.step = 'otp';
+      paintBooking();
+    });
+  }
+});
+
+/* ---------- 2. OTP ---------- */
+function maskedContact() {
+  if (booking.channel === 'email') {
+    const [name, domain] = booking.contact.split('@');
+    return `${name.slice(0, 2)}****@${domain ?? ''}`;
+  }
+  const d = booking.contact.replace(/\D/g, '');
+  return `(${d.slice(0, 2)}*) *****${d.slice(-2)}`;
+}
+
+const bkOtp = () => ({
+  header: backBar(),
+  body: `
+    <h3>Verification</h3>
+    <p class="sub">Enter the 4-digit OTP sent to <b>${maskedContact()}</b></p>
+
+    <div class="otp4" id="bk-otp">
+      ${[0,1,2,3].map(i => `<input type="tel" inputmode="numeric" maxlength="1" placeholder="-" aria-label="Digit ${i+1}" />`).join('')}
+    </div>
+    <p class="otp-exp">OTP expires in <b id="bk-otp-left">03:00</b></p>`,
+  foot: `<button class="btn-round" type="button" id="bk-verify" disabled>Verify and Proceed</button>`,
+  bind() {
+    $$('[data-bkback]').forEach(b => b.addEventListener('click', () => goBack('verify')));
+
+    const boxes = $$('#bk-otp input');
+    const refresh = () => $('#bk-verify').disabled = !boxes.every(b => b.value);
+
+    boxes.forEach((box, i) => {
+      box.addEventListener('input', () => {
+        box.value = box.value.replace(/\D/g, '');
+        if (box.value && i < 3) boxes[i + 1].focus();
+        refresh();
+      });
+      box.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+      });
+      box.addEventListener('paste', e => {
+        const t = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+        if (!t) return;
+        e.preventDefault();
+        [...t].forEach((c, n) => boxes[n] && (boxes[n].value = c));
+        boxes[Math.min(t.length, 3)].focus();
+        refresh();
+      });
+    });
+    boxes[0].focus();
+
+    booking.otpLeft = 180;
+    clearInterval(bkOtpTimer);
+    const tickOtp = () => {
+      const el = $('#bk-otp-left');
+      if (!el) return clearInterval(bkOtpTimer);
+      const m = String(Math.floor(booking.otpLeft / 60)).padStart(2, '0');
+      const sec = String(booking.otpLeft % 60).padStart(2, '0');
+      el.textContent = `${m}:${sec}`;
+      if (booking.otpLeft-- <= 0) {
+        clearInterval(bkOtpTimer);
+        el.textContent = 'expired';
+        $('#bk-verify').disabled = true;
+      }
+    };
+    tickOtp();
+    bkOtpTimer = setInterval(tickOtp, 1000);
+
+    $('#bk-verify').addEventListener('click', () => {
+      clearInterval(bkOtpTimer);
+      booking.step = 'patients';
+      paintBooking();
+    });
+  }
+});
+
+/* ---------- 3. which patient ---------- */
+const bkPatients = () => ({
+  header: backBar(),
+  body: `
+    <h3>Who is this appointment for?</h3>
+    <p class="sub">Please choose the patient for this appointment.</p>
+    ${PATIENTS.map(pt => `
+      <button class="pt-opt ${booking.patient === pt.id ? 'on' : ''}" type="button" data-pt="${pt.id}">
+        <span class="pt-av">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8.4" r="3.4"/><path d="M5.6 19.4c1.3-3.1 3.8-4.6 6.4-4.6s5.1 1.5 6.4 4.6"/></svg>
+        </span>
+        <span>
+          <span class="pn">${pt.name}</span>
+          ${pt.email ? `<span class="pe">${pt.email}</span>` : ''}
+        </span>
+        <span class="radio"></span>
+      </button>`).join('')}`,
+  foot: `
+    <button class="btn-next" type="button" id="bk-addpt" style="margin-bottom:10px;">Add New Patient</button>
+    <button class="btn-next" type="button" id="bk-ptnext" ${booking.patient ? '' : 'disabled'}>Next</button>`,
+  bind() {
+    $$('[data-bkback]').forEach(b => b.addEventListener('click', () => goBack('otp')));
+
+    $$('[data-pt]').forEach(b => b.addEventListener('click', () => {
+      booking.patient = b.dataset.pt;
+      paintBooking();
+    }));
+
+    $('#bk-addpt').addEventListener('click', () => {
+      booking.patient = null;
+      booking.details = {};
+      booking.step = 'details';
+      paintBooking();
+    });
+
+    $('#bk-ptnext').addEventListener('click', () => {
+      const pt = PATIENTS.find(x => x.id === booking.patient);
+      booking.details = {
+        first: pt.first ?? pt.name.split(' ')[0],
+        last:  pt.last ?? pt.name.split(' ').slice(1).join(' '),
+        dob: pt.dob ?? '', gender: pt.gender ?? '',
+        phone: pt.phone ?? '', email: pt.mail ?? '', zip: '', updates: false
+      };
+      booking.step = 'details';
+      paintBooking();
+    });
+  }
+});
+
+/* ---------- 4. personal details ---------- */
+const bkDetails = () => {
+  const d = booking.details ?? {};
+  return {
+    header: backBar(),
+    body: `
+      <h3>Personal Details</h3>
+      <p class="sub">This information helps us confirm your identity and ensure accurate records.</p>
+
+      <div class="d-grid">
+        <div data-d="first">
+          <label for="d-first">First Name<span class="req">*</span></label>
+          <input id="d-first" type="text" placeholder="First Name" value="${d.first ?? ''}" />
+          <div class="d-err">Required</div>
+        </div>
+        <div data-d="last">
+          <label for="d-last">Last Name<span class="req">*</span></label>
+          <input id="d-last" type="text" placeholder="Last Name" value="${d.last ?? ''}" />
+          <div class="d-err">Required</div>
+        </div>
+        <div data-d="dob">
+          <label for="d-dob">Date of Birth<span class="req">*</span></label>
+          <input id="d-dob" type="date" max="${isoToday()}" value="${d.dob ?? ''}" />
+          <div class="d-err">Required</div>
+        </div>
+        <div data-d="gender">
+          <label for="d-gender">Gender</label>
+          <select id="d-gender" class="${d.gender ? '' : 'empty'}">
+            <option value="">Select Gender</option>
+            ${['Male','Female','Other','Prefer not to say'].map(g =>
+              `<option ${d.gender === g ? 'selected' : ''}>${g}</option>`).join('')}
+          </select>
+        </div>
+        <div data-d="phone">
+          <label for="d-phone">Phone Number<span class="req">*</span></label>
+          <input id="d-phone" type="tel" placeholder="(999) 999-9999" value="${d.phone ?? ''}" />
+          <div class="d-err">Enter a 10-digit number</div>
+        </div>
+        <div data-d="email">
+          <label for="d-email">Email<span class="req">*</span></label>
+          <input id="d-email" type="email" placeholder="you@example.com" value="${d.email ?? ''}" />
+          <div class="d-err">Enter a valid email address</div>
+        </div>
+        <div class="full" style="max-width:calc(50% - 8px);">
+          <label for="d-zip">Zip Code</label>
+          <input id="d-zip" type="text" inputmode="numeric" maxlength="10" placeholder="123456" value="${d.zip ?? ''}" />
+        </div>
+      </div>
+
+      <label class="switch-row">
+        <input type="checkbox" id="d-updates" ${d.updates ? 'checked' : ''} />
+        <span class="switch"></span>
+        <span>Send Appointment Details and Updates via SMS and Email</span>
+      </label>`,
+    foot: `<button class="btn-next" type="button" id="d-next">Next</button>`,
+    bind() {
+      $$('[data-bkback]').forEach(b => b.addEventListener('click', () => goBack('patients')));
+
+      const phone = $('#d-phone');
+      phone.addEventListener('input', () => phone.value = maskPhone(phone.value));
+      phone.addEventListener('keydown', e => {
+        if (e.key.length === 1 && !/\d/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+      });
+
+      $('#d-gender').addEventListener('change', e =>
+        e.target.classList.toggle('empty', !e.target.value));
+
+      $('#d-next').addEventListener('click', () => {
+        const v = id => $('#' + id).value.trim();
+        const flag = (key, ok) => {
+          $(`[data-d="${key}"]`).classList.toggle('bad', !ok);
+          return ok;
+        };
+        let ok = true;
+        ok = flag('first', !!v('d-first')) && ok;
+        ok = flag('last',  !!v('d-last')) && ok;
+        ok = flag('dob',   !!v('d-dob')) && ok;
+        ok = flag('phone', v('d-phone').replace(/\D/g, '').length === 10) && ok;
+        ok = flag('email', /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(v('d-email'))) && ok;
+        if (!ok) return;
+
+        booking.details = {
+          first: v('d-first'), last: v('d-last'), dob: v('d-dob'),
+          gender: v('d-gender'), phone: v('d-phone'), email: v('d-email'),
+          zip: v('d-zip'), updates: $('#d-updates').checked
+        };
+        booking.step = 'reason';
+        paintBooking();
+      });
+    }
+  };
+};
+
+/* ---------- small confirmation modal ---------- */
+function miniModal(title, text, label = 'Go back to home') {
+  $('#mini-title').textContent = title;
+  $('#mini-text').textContent = text;
+  $('#mini-ok').textContent = label;
+  $('#mini-modal').classList.add('open');
+}
+$('#mini-ok').addEventListener('click', () => {
+  $('#mini-modal').classList.remove('open');
+  closeBooking();
+});
+$('#mini-modal').addEventListener('click', e => {
+  if (e.target.id === 'mini-modal') $('#mini-modal').classList.remove('open');
+});
+
+const BK_VIEWS = {
+  location: bkLocation, verify: bkVerify, otp: bkOtp, patients: bkPatients,
+  details: bkDetails, reason: bkReason, datetime: bkDateTime, done: bkDone
+};
+
+/* ---------- new / existing patient ---------- */
+$('#who-new').addEventListener('click', () => {
+  $('#who-modal').classList.remove('open');
+  booking.step = 'reason';
+  paintBooking();
+});
+
+$('#who-existing').addEventListener('click', () => {
+  $('#who-modal').classList.remove('open');
+  Object.assign(booking, { channel: 'phone', contact: '', patient: null, details: {} });
+  booking.step = 'verify';
+  paintBooking();
+});
+
+$('#who-back').addEventListener('click', () => {
+  $('#who-modal').classList.remove('open');
+  booking.clinic = null;
+  booking.step = 'location';
+  paintBooking();
+});
+
+
+
+
+/* land straight on the feature once the code is verified */
+function onVerified() {
+  show('screen-app');
+  openBooking();
+}
+
+$('#sign-out').addEventListener('click', () => {
+  $('#mobile').value = '';
+  show('screen-request');
+});
+</script>
+</body>
+</html>

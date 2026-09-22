@@ -1,59 +1,40 @@
-# Portfolio
+# Naidu Tamarana — Portfolio
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.24.
-
-## Development server
-
-To start a local development server, run:
+Angular 21 portfolio for a Frontend Developer with healthcare product experience.
 
 ```bash
-ng serve
+npm start        # http://localhost:4200
+npm run build    # production build → dist/portfolio
+npm test         # Vitest unit tests
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Structure
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```
+src/app/
+  core/models/        Typed content models
+  core/data/          All site content (profile, experience, skills, projects)
+  layout/             Navbar, footer
+  pages/home/         Home page, one component per section
+  pages/project-detail/  Case study page  → /projects/:slug
+  pages/demo-viewer/     Full-screen prototype viewer → /demos/:slug
+  shared/             Icon, reveal-on-scroll directive, project card/visual, section heading
+src/styles/           Global design system (tokens, components, sections, pages)
+public/prototypes/    Standalone interactive HTML prototypes
+public/images/        Profile photo and project screenshots
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Updating content
 
-```bash
-ng generate --help
-```
+- **Profile photo:** `public/images/profile.png` (path set by `photo` in `profile.data.ts`). If the file is missing the hero shows initials.
+- **Profile, experience, skills, education:** edit `src/app/core/data/profile.data.ts`.
+- **LinkedIn / GitHub / resume:** set `linkedin`, `github` or `resumeUrl` on `PROFILE` — contact links appear automatically.
 
-## Building
+## Adding a project
 
-To build the project run:
+1. Append an object to `PROJECTS` in `src/app/core/data/projects.data.ts`.
+2. Optional prototype: put the HTML file in `public/prototypes/`, screenshots in
+   `public/images/projects/`, and fill in the `demo` field (url, flows, hint, screens).
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+The home page cards, the demos section, the case study page and the demo viewer are all
+generated from that list — no component changes needed.

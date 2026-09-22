@@ -1,0 +1,141 @@
+@if (project(); as p) {
+  <article class="detail">
+    <header class="detail__hero">
+      <div class="container">
+        <a class="back-link" routerLink="/" fragment="projects"><app-icon name="arrow-left" [size]="16" /> All projects</a>
+        <div class="detail__badges">
+          <span class="badge badge--real-light"><app-icon name="briefcase" [size]="13" /> Real project experience</span>
+          <span class="badge badge--glass">{{ p.category }}</span>
+          @if (p.demo) {
+            <span class="badge badge--demo"><app-icon name="play" [size]="12" /> Interactive prototype available</span>
+          }
+        </div>
+        <h1 class="detail__title">{{ p.title }}</h1>
+        <p class="detail__summary">{{ p.summary }}</p>
+        <ul class="chips chips--sm chips--dark">
+          @for (t of p.tags; track t) {
+            <li class="chip">{{ t }}</li>
+          }
+        </ul>
+        @if (p.demo; as demo) {
+          <div class="hero__actions">
+            <a class="btn btn--primary" [routerLink]="['/demos', p.slug]"><app-icon name="play" [size]="16" /> Launch interactive demo</a>
+            <a class="btn btn--glass" [href]="demo.url" target="_blank" rel="noopener">Open in new tab <app-icon name="external" [size]="16" /></a>
+          </div>
+        }
+      </div>
+    </header>
+
+    <div class="container detail__media">
+      <app-project-visual [project]="p" [screen]="activeScreen()" />
+      @if (p.demo; as demo) {
+        @if (demo.screens.length > 1) {
+          <div class="thumbs" aria-label="Prototype screens">
+            @for (s of demo.screens; track s.src; let i = $index) {
+              <button class="thumb" type="button" [class.is-active]="i === activeScreen()"
+                      [attr.aria-pressed]="i === activeScreen()" (click)="activeScreen.set(i)">
+                <img [src]="s.src" alt="" width="1280" height="800" loading="lazy" />
+                <span>{{ s.caption }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <div class="container detail__body">
+      <div class="detail__main">
+        <section class="detail__block">
+          <h2 class="detail__h2">Overview</h2>
+          @for (para of p.overview; track $index) {
+            <p class="detail__text">{{ para }}</p>
+          }
+        </section>
+
+        @if (p.focusAreas; as areas) {
+          <section class="detail__block">
+            <h2 class="detail__h2">What the work covered</h2>
+            <div class="focus-grid">
+              @for (f of areas; track f.title) {
+                <article class="card focus-card">
+                  <span class="icon-tile icon-tile--teal"><app-icon [name]="f.icon" /></span>
+                  <h3>{{ f.title }}</h3>
+                  <ul class="ticks ticks--compact">
+                    @for (pt of f.points; track pt) {
+                      <li>{{ pt }}</li>
+                    }
+                  </ul>
+                </article>
+              }
+            </div>
+          </section>
+        }
+
+        @if (p.demo; as demo) {
+          <section class="detail__block prototype-block">
+            <div class="prototype-block__head">
+              <span class="badge badge--demo"><app-icon name="play" [size]="12" /> Demo / prototype</span>
+              <h2 class="detail__h2">Prototype walkthrough</h2>
+            </div>
+            <p class="detail__text">
+              A standalone {{ demo.stack.join(', ') }} prototype that demonstrates the workflow with mock data.
+              It is separate from the production code and contains no real patient data.
+            </p>
+            <ol class="flow-list">
+              @for (f of demo.flows; track f; let i = $index) {
+                <li><span>{{ i + 1 }}</span>{{ f }}</li>
+              }
+            </ol>
+            <p class="hint"><app-icon name="info" [size]="16" /> {{ demo.hint }}</p>
+            <a class="btn btn--primary" [routerLink]="['/demos', p.slug]"><app-icon name="play" [size]="16" /> Launch interactive demo</a>
+          </section>
+        }
+      </div>
+
+      <aside class="detail__aside">
+        <div class="card aside-card">
+          <h3>What I worked on</h3>
+          <ul class="ticks ticks--compact">
+            @for (h of p.highlights; track h) {
+              <li>{{ h }}</li>
+            }
+          </ul>
+        </div>
+        <div class="card aside-card">
+          <h3>Project details</h3>
+          <dl class="aside-dl">
+            <div><dt>Type</dt><dd>Real project experience</dd></div>
+            <div><dt>Domain</dt><dd>Healthcare · {{ p.category }}</dd></div>
+            @if (p.demo; as demo) {
+              <div><dt>Prototype stack</dt><dd>{{ demo.stack.join(' · ') }}</dd></div>
+              <div><dt>Prototype flows</dt><dd>{{ demo.flows.length }}</dd></div>
+            }
+          </dl>
+        </div>
+      </aside>
+    </div>
+
+    <nav class="container pager" aria-label="More projects">
+      @if (prev(); as pr) {
+        <a class="pager__link" [routerLink]="['/projects', pr.slug]">
+          <small>Previous</small><span><app-icon name="arrow-left" [size]="16" /> {{ pr.title }}</span>
+        </a>
+      } @else {
+        <span></span>
+      }
+      @if (next(); as nx) {
+        <a class="pager__link pager__link--next" [routerLink]="['/projects', nx.slug]">
+          <small>Next</small><span>{{ nx.title }} <app-icon name="arrow-right" [size]="16" /></span>
+        </a>
+      }
+    </nav>
+  </article>
+} @else {
+  <section class="not-found">
+    <div class="container">
+      <h1>Project not found</h1>
+      <p>That project doesn't exist or has moved.</p>
+      <a class="btn btn--primary" routerLink="/" fragment="projects"><app-icon name="arrow-left" [size]="16" /> Back to projects</a>
+    </div>
+  </section>
+}

@@ -1,0 +1,67 @@
+<section class="hero" id="home">
+  <div class="hero__backdrop" aria-hidden="true"></div>
+
+  <div class="container hero-center">
+    <div class="hero-avatar" appReveal>
+      <div class="hero-avatar__ring">
+        <div class="hero-avatar__img">
+          @if (!photoFailed()) {
+            <img [src]="profile.photo" [alt]="'Photo of ' + profile.name" width="1159" height="1373"
+                 fetchpriority="high" (error)="photoFailed.set(true)" />
+          } @else {
+            <span class="hero-avatar__initials" aria-hidden="true">{{ profile.initials }}</span>
+          }
+        </div>
+      </div>
+      <span class="hero-avatar__badge hero-avatar__badge--left">
+        <app-icon name="code" [size]="15" /> Angular · AngularJS
+      </span>
+      <span class="hero-avatar__badge hero-avatar__badge--right">
+        <app-icon name="server" [size]="15" /> .NET Core API
+      </span>
+    </div>
+
+    <p class="hero__kicker" [appReveal]="60">
+      <span class="pulse-dot" aria-hidden="true"></span>
+      Software Developer (Frontend) at {{ profile.company }} · {{ profile.location }}
+    </p>
+
+    <h1 class="hero__title" [appReveal]="100">
+      Hi, I'm <span class="hero__name">{{ profile.name }}</span>
+    </h1>
+
+    <p class="hero__role" [appReveal]="140">Frontend Developer building healthcare products</p>
+
+    <p class="hero__lead" [appReveal]="180">
+      {{ profile.experience }} working on EHR/EMR, ASC and patient-facing apps — responsive UI,
+      reusable Angular &amp; AngularJS components, and REST API integration with .NET Core Web API.
+    </p>
+
+    <ul class="hero__stack" [appReveal]="220" aria-label="Core technologies">
+      @for (t of stack; track t) {
+        <li>{{ t }}</li>
+      }
+    </ul>
+
+    <div class="hero__actions hero__actions--center" [appReveal]="260">
+      <a class="btn btn--primary" routerLink="/" fragment="projects">
+        View projects <app-icon name="arrow-right" />
+      </a>
+      <a class="btn btn--glass" routerLink="/" fragment="demos">
+        <app-icon name="play" [size]="16" /> Try live demos
+      </a>
+      <a class="btn btn--glass" [href]="'mailto:' + profile.email">
+        <app-icon name="mail" [size]="16" /> Email me
+      </a>
+    </div>
+
+    <dl class="hero-strip" [appReveal]="300">
+      @for (s of stats; track s.label) {
+        <div class="hero-strip__item">
+          <dt>{{ s.label }}</dt>
+          <dd>{{ s.value }}</dd>
+        </div>
+      }
+    </dl>
+  </div>
+</section>

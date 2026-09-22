@@ -1,1 +1,8 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global design system. Components stay style-free and use these classes. */
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/components';
+@use 'styles/layout';
+@use 'styles/hero';
+@use 'styles/sections';
+@use 'styles/pages';

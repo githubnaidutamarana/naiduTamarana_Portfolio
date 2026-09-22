@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Healthcare — Patient Onboarding</title>
+<style>
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root{
+  --navy:#0a5578;            /* one brand blue across login and onboarding */
+  --navy-dark:#08445f;
+  --mint:#0a5578;            /* the swatch itself */
+  --teal:#0a5578;
+  --teal-dark:#08445f;
+  --teal-deep:#052f43;
+  --mint-soft:#e6eff4;       /* tinted fills */
+  --mint-line:#bcd5e2;       /* borders on tinted surfaces */
+  --green:#4e93b5;           /* completed step */
+  --green-bg:#e6eff4;
+  --green-text:#0a5578;
+  --amber-bg:#fdf6ea;
+  --amber-border:#e2b76a;
+  --ink:#1b1f24;
+  --ink-2:#4a5560;
+  --muted:#7c8894;
+  --line:#dfe4e9;
+  --line-2:#eceff2;
+  --field-bg:#ffffff;
+  --page:#f2f3f5;
+  --card:#ffffff;
+  --danger:#c0392b;
+  --radius-card:14px;
+  --radius-field:8px;
+  --shell:820px;
+  /* motion: one scale, used everywhere */
+  --dur-press:120ms;
+  --dur-ui:200ms;
+  --dur-enter:300ms;
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+
+*{box-sizing:border-box;}
+
+/* ---------- shared motion ---------- */
+@keyframes viewIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+@keyframes panelIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+@keyframes popIn{0%{opacity:0;transform:scale(.82);}60%{transform:scale(1.04);}100%{opacity:1;transform:scale(1);}}
+@keyframes badgeIn{0%{opacity:0;transform:scale(.5);}55%{transform:scale(1.08);}100%{opacity:1;transform:scale(1);}}
+@keyframes riseIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+.view-enter{animation:viewIn var(--dur-enter) var(--ease-out) both;}
+.screen.active{animation:fadeIn var(--dur-enter) var(--ease) both;}
+
+/* every pressable surface reacts the same way */
+button{transition:background var(--dur-ui) var(--ease),
+                  color var(--dur-ui) var(--ease),
+                  border-color var(--dur-ui) var(--ease),
+                  transform var(--dur-press) var(--ease),
+                  box-shadow var(--dur-ui) var(--ease);}
+button:active:not(:disabled){transform:scale(.978);}
+input,select{transition:border-color var(--dur-ui) var(--ease),
+                        box-shadow var(--dur-ui) var(--ease),
+                        background var(--dur-ui) var(--ease);}
+a,label{transition:color var(--dur-ui) var(--ease);}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:1ms !important;animation-iteration-count:1 !important;
+                       transition-duration:1ms !important;}
+}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family:var(--font);
+  background:var(--page);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;}
+input,select{font-family:inherit;}
+
+/* ============================================================
+   APP SHELL  — full height, scroll body, sticky footer
+   ============================================================ */
+.shell{
+  position:relative;
+  width:100%;
+  max-width:var(--shell);
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  background:var(--card);
+  overflow:hidden;
+}
+@media (min-width:900px){
+  body{padding:24px 0;}
+  .shell{
+    min-height:calc(100vh - 48px);
+    min-height:calc(100dvh - 48px);
+    border-radius:16px;
+    box-shadow:0 10px 40px rgba(20,30,45,.10);
+  }
+}
+
+.screen{display:none;flex:1;flex-direction:column;min-height:0;}
+.screen.active{display:flex;}
+
+/* ============================================================
+   LOGIN SCREENS
+   ============================================================ */
+.login-header{
+  background:var(--navy);
+  padding:26px 28px 30px;
+}
+.tec-logo{display:flex;align-items:center;justify-content:center;gap:11px;color:#fff;}
+.tec-logo svg{flex:0 0 auto;}
+.tec-logo .tec-word{
+  font-size:27px;font-weight:700;line-height:1;letter-spacing:.01em;
+  font-family:Georgia,"Times New Roman",serif;
+}
+.login-body{
+  flex:1;
+  background:var(--page);
+  padding:26px 20px 40px;
+  overflow-y:auto;
+}
+.login-top{position:relative;text-align:center;margin-bottom:26px;}
+.icon-back{
+  position:absolute;left:0;top:0;
+  width:42px;height:42px;border-radius:50%;
+  border:none;background:#dfe1e5;color:#4a5560;
+  font-size:20px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.icon-back:hover{background:#d3d6db;}
+.login-top h1{font-size:22px;margin:6px 0 6px;font-weight:700;}
+.login-top p{margin:0;color:var(--ink-2);font-size:15px;}
+.login-top p b{color:var(--ink);font-weight:600;}
+
+.login-card{
+  background:var(--card);
+  border-radius:var(--radius-card);
+  padding:22px 20px;
+  max-width:640px;margin:0 auto;
+  box-shadow:0 1px 3px rgba(20,30,45,.06);
+}
+.login-card > label.field-title{
+  display:block;font-size:17px;font-weight:600;margin-bottom:12px;
+}
+.phone-row{display:flex;gap:12px;margin-bottom:18px;}
+.phone-row select{
+  width:112px;border:1px solid var(--line);border-radius:var(--radius-field);
+  padding:0 8px;height:52px;background:#fff;font-size:15px;color:var(--ink);
+}
+.phone-row input{
+  flex:1;min-width:0;border:1px solid var(--line);border-radius:var(--radius-field);
+  height:52px;padding:0 14px;font-size:17px;
+}
+.btn-primary-lg{
+  width:100%;height:54px;border:none;border-radius:10px;
+  background:var(--navy);color:#fff;font-size:17px;font-weight:600;cursor:pointer;
+}
+.btn-primary-lg:hover:not(:disabled){background:var(--navy-dark);}
+.btn-primary-lg:disabled{background:#c3c6ca;cursor:not-allowed;}
+
+.otp-row{display:flex;gap:10px;margin-bottom:18px;}
+.otp-row input{
+  flex:1;min-width:0;height:54px;text-align:center;font-size:20px;font-weight:600;
+  border:1px solid var(--line);border-radius:10px;
+}
+.otp-row input::placeholder{color:#c3c9cf;font-weight:400;}
+.otp-row input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 2px rgba(35,59,113,.15);}
+.resend{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:16px;color:var(--navy);font-size:15px;font-weight:500;
+  background:none;border:none;width:100%;cursor:pointer;
+}
+.otp-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:14px;}
+.powered{
+  text-align:center;font-size:13px;color:var(--muted);padding:18px 0 6px;
+}
+.powered b{color:var(--ink-2);font-weight:600;}
+
+/* ============================================================
+   ONBOARDING HEADER
+   ============================================================ */
+.ob-header{background:#f7f8f9;padding:14px 18px 10px;border-bottom:1px solid var(--line-2);}
+.ob-logo{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  font-size:20px;font-weight:700;letter-spacing:.01em;margin-bottom:14px;
+  font-family:Georgia,"Times New Roman",serif;
+}
+.stepper{display:flex;gap:6px;margin-bottom:9px;}
+.stepper span{flex:1;height:5px;border-radius:3px;background:#dcdfe3;transition:background .25s;}
+.stepper span.done{background:var(--green);}
+.stepper span.current{background:var(--mint);}
+.step-meta{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2);}
+.step-meta b{color:var(--ink);font-weight:700;}
+.greet{background:var(--teal);color:#fff;text-align:center;padding:11px 12px;font-size:15px;}
+
+/* ============================================================
+   ONBOARDING BODY (scroll area) + FOOTER
+   ============================================================ */
+.ob-body{flex:1;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 18px 28px;min-height:0;}
+.ob-footer{
+  border-top:1px solid var(--line-2);background:#fff;
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+  display:flex;gap:12px;justify-content:space-between;align-items:center;
+}
+.ob-footer.editing{justify-content:flex-end;}
+.btn{
+  height:48px;padding:0 30px;border-radius:9px;border:none;
+  font-size:16px;font-weight:600;cursor:pointer;
+}
+.btn-ghost{background:#eceef0;color:#6d7883;}
+.btn-ghost:hover{background:#e2e5e8;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{background:var(--teal-dark);}
+
+/* ============================================================
+   FORM PRIMITIVES
+   ============================================================ */
+.step-title{font-size:22px;font-weight:700;margin:0 0 6px;}
+.step-lead{margin:0 0 18px;color:var(--ink-2);font-size:15px;line-height:1.5;max-width:60ch;}
+
+.scan-frame{
+  position:relative;width:100%;aspect-ratio:16/10;max-height:270px;
+  border-radius:14px;cursor:pointer;overflow:hidden;
+  background:radial-gradient(120% 130% at 26% 20%, #0f6b96 0%, #08445f 52%, #04232f 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  color:#fff;border:none;
+}
+.scan-frame:focus-visible{outline:3px solid var(--teal);outline-offset:3px;}
+.scan-frame .corner{position:absolute;width:34px;height:34px;border:3px solid rgba(255,255,255,.62);}
+.scan-frame .c1{top:16px;left:16px;border-right:none;border-bottom:none;border-radius:8px 0 0 0;}
+.scan-frame .c2{top:16px;right:16px;border-left:none;border-bottom:none;border-radius:0 8px 0 0;}
+.scan-frame .c3{bottom:16px;left:16px;border-right:none;border-top:none;border-radius:0 0 0 8px;}
+.scan-frame .c4{bottom:16px;right:16px;border-left:none;border-top:none;border-radius:0 0 8px 0;}
+.scan-frame .scan-main{font-size:17px;font-weight:600;}
+.scan-frame .scan-sub{font-size:13px;color:rgba(255,255,255,.72);}
+
+.file-chip{
+  display:flex;align-items:center;gap:12px;margin-top:14px;
+  border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fbfcfd;
+}
+.file-chip .fi{
+  width:38px;height:38px;border-radius:8px;background:var(--mint-soft);color:var(--teal);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:18px;
+}
+.file-chip .fname{font-weight:600;font-size:15px;}
+.file-chip .fsize{font-size:13px;color:var(--green-text);margin-top:2px;}
+.file-chip button{
+  margin-left:auto;border:none;background:none;font-size:20px;color:var(--muted);cursor:pointer;
+}
+.detected{
+  display:flex;align-items:center;gap:10px;margin-top:12px;
+  background:var(--green-bg);border-radius:10px;padding:12px 14px;
+  color:var(--green-text);font-weight:600;font-size:15px;
+}
+
+.divider{display:flex;align-items:center;gap:14px;margin:22px 0 18px;color:var(--muted);font-size:14px;}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+
+.grid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media (min-width:600px){
+  .grid{grid-template-columns:1fr 1fr;}
+  .grid .span-2{grid-column:1 / -1;}
+}
+.field label{display:block;font-size:14px;font-weight:600;margin-bottom:6px;}
+.field label .req{color:var(--danger);}
+.field input,.field select{
+  width:100%;height:48px;border:1px solid var(--line);border-radius:var(--radius-field);
+  padding:0 13px;font-size:15px;background:var(--field-bg);color:var(--ink);
+}
+.field input::placeholder{color:#a9b2bb;}
+.field input:focus,.field select:focus{
+  outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(10,85,120,.20);
+}
+.field.highlight input{background:var(--amber-bg);border-color:var(--amber-border);}
+.field.invalid input,.field.invalid select{border-color:var(--danger);background:#fdf3f2;}
+.err{display:none;color:var(--danger);font-size:13px;margin-top:5px;}
+.field.invalid .err{display:block;}
+
+.comm-title{font-size:15px;font-weight:600;margin:26px 0 3px;}
+.comm-sub{font-size:14px;color:var(--teal);margin:0 0 12px;}
+.comm-row{display:flex;flex-wrap:wrap;gap:12px;}
+.check{
+  display:flex;align-items:center;gap:10px;background:var(--amber-bg);
+  border:1px solid #f0e3cd;border-radius:8px;padding:11px 20px 11px 14px;
+  font-size:15px;cursor:pointer;min-width:150px;
+}
+.check input{width:17px;height:17px;accent-color:var(--teal);}
+
+/* Profile picture step */
+.avatar-wrap{display:flex;flex-direction:column;align-items:center;margin:34px 0 0;}
+.avatar{
+  position:relative;width:170px;height:170px;border-radius:50%;
+  background:var(--mint-soft);border:2px dashed var(--mint-line);
+  display:flex;align-items:center;justify-content:center;color:var(--teal);
+  background-size:cover;background-position:center;
+}
+.avatar.filled{border-style:solid;border-color:transparent;}
+.avatar .remove{
+  position:absolute;top:2px;right:2px;width:34px;height:34px;border-radius:50%;
+  background:#fff;border:2px solid var(--danger);color:var(--danger);
+  font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.btn-outline{
+  margin-top:26px;width:100%;max-width:430px;height:52px;border-radius:10px;
+  border:1px solid var(--line);background:#fff;color:var(--teal);
+  font-size:16px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+}
+.btn-outline:hover{background:#f5fafc;}
+.link-skip{
+  margin-top:22px;background:none;border:none;cursor:pointer;
+  color:var(--teal);font-size:16px;font-weight:600;text-decoration:underline;
+}
+.placeholder-step{
+  border:1px dashed var(--line);border-radius:12px;padding:38px 22px;
+  text-align:center;color:var(--muted);margin-top:24px;
+}
+
+/* Insurance ------------------------------------------------ */
+.btn-add-ins{
+  width:100%;height:52px;border-radius:9px;margin-top:6px;
+  background:var(--mint-soft);border:1px solid var(--mint-line);color:var(--teal);
+  font-size:17px;font-weight:600;cursor:pointer;
+}
+.btn-add-ins:hover{background:#d5e5ed;}
+
+.ins-card{
+  border:1px solid var(--line);border-radius:11px;background:#fff;
+  margin-bottom:14px;overflow:hidden;transition:border-color .18s;
+}
+.ins-card.open{border:1.5px solid #0a5578;}
+.ins-head{
+  width:100%;display:flex;align-items:flex-start;gap:14px;text-align:left;
+  border:none;background:#fff;padding:16px 16px;cursor:pointer;
+}
+.ins-head:hover{background:#fafbfc;}
+.ins-type{display:block;font-size:16px;font-weight:600;color:var(--teal);}
+.ins-sub{display:block;font-size:15px;color:#3d4852;margin-top:4px;line-height:1.35;max-width:34ch;}
+.ins-head .chev{margin-left:auto;color:#5a6672;flex:0 0 auto;transition:transform .2s;padding-top:4px;}
+.ins-card.open .chev{transform:rotate(180deg);}
+.ins-body{display:none;padding:0 16px 18px;}
+.ins-card.open .ins-body{display:block;}
+
+.ins-rows{margin:4px 0 0;}
+.ins-row{display:flex;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid var(--line-2);}
+.ins-row dt{color:var(--ink-2);font-size:15px;}
+.ins-row dd{margin:0;font-size:15px;font-weight:600;text-align:right;}
+.ins-actions{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.ins-actions.single{grid-template-columns:1fr;}
+.btn-remove{
+  height:50px;border-radius:9px;background:#fff;border:1px solid #e2867f;
+  color:#d9534f;font-size:17px;font-weight:600;cursor:pointer;
+}
+.btn-remove:hover{background:#fdf5f4;}
+.btn-save{
+  height:50px;border-radius:9px;background:var(--mint-soft);border:1px solid var(--mint-line);
+  color:var(--teal);font-size:17px;font-weight:600;cursor:pointer;
+}
+.btn-save:hover{background:#d5e5ed;}
+
+
+.link-skip-inline{
+  display:block;margin:18px auto 0;background:none;border:none;cursor:pointer;
+  color:var(--teal);font-size:16px;font-weight:600;text-decoration:underline;
+}
+
+.doc-chip{
+  display:flex;align-items:center;gap:12px;margin-top:12px;
+  border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;background:#f7f8f9;
+}
+.doc-chip .thumb{
+  width:46px;height:38px;border-radius:6px;flex:0 0 auto;
+  background:linear-gradient(140deg,#c9a077,#a9784f);
+  display:flex;align-items:center;justify-content:center;
+}
+.doc-chip .thumb span{
+  width:30px;height:17px;border-radius:2px;background:#eef2f4;
+  box-shadow:inset 0 4px 0 #9fc3d4;
+}
+.doc-chip .fname{font-weight:600;font-size:16px;}
+.doc-chip .fsize{font-size:14px;color:var(--green-text);margin-top:2px;}
+.doc-chip button{
+  margin-left:auto;border:none;background:none;font-size:21px;color:#6f7a85;cursor:pointer;
+}
+
+/* Insurance form fields follow the mobile Figma spec: single column,
+   larger labels, tinted inputs. Scoped so Tab 1 keeps its own styling. */
+.ins-scope .field{margin-bottom:20px;}
+.ins-scope .field label{font-size:17px;font-weight:600;margin-bottom:9px;}
+.ins-scope .field input,
+.ins-scope .field select{
+  height:54px;font-size:16px;background:#f8f9fa;border-color:#e3e7ea;border-radius:9px;
+}
+.ins-scope .field input::placeholder{color:#9aa4ae;}
+.ins-scope .field select{font-weight:600;color:var(--ink);}
+.ins-scope .field select.empty{font-weight:400;color:#9aa4ae;}
+
+/* About you accordions ------------------------------------- */
+.acc{
+  border:1px solid var(--line);border-radius:9px;background:#fff;
+  margin-bottom:13px;transition:border-color .18s;
+}
+.acc.open{border:1.5px solid #0a5578;}
+.acc-head{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:17px 16px;background:none;border:none;cursor:pointer;
+  font-size:16px;color:var(--ink);text-align:left;
+}
+.acc-head:hover{background:#fafbfc;border-radius:8px;}
+.acc-head .acc-chev{color:#6b7681;flex:0 0 auto;transition:transform .2s;}
+.acc.open .acc-chev{transform:rotate(90deg);}
+.acc-body{display:none;padding:0 16px 18px;}
+.acc.open .acc-body{display:block;}
+.acc-field{margin-bottom:15px;}
+.acc-field:last-child{margin-bottom:0;}
+.acc-field label{display:block;font-size:14px;color:var(--ink-2);margin-bottom:7px;}
+.acc-field input,.acc-field select{
+  width:100%;height:44px;border:1px solid var(--line);border-radius:7px;
+  padding:0 12px;font-size:15px;background:#fff;color:var(--ink);
+}
+.acc-field input::placeholder,.acc-field select.empty{color:#9aa4ae;}
+.acc-field input:focus,.acc-field select:focus{
+  outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(10,85,120,.20);
+}
+
+/* Medical history pickers ---------------------------------- */
+.acc-head .acc-icon{margin-right:10px;flex:0 0 auto;vertical-align:-3px;}
+.acc-head .acc-label{display:flex;align-items:center;}
+.med-check{
+  display:flex;align-items:center;gap:10px;font-size:14px;
+  margin:4px 0 16px;cursor:pointer;color:var(--ink);
+}
+.med-check input{width:17px;height:17px;accent-color:var(--teal);}
+.med-q{font-size:14px;font-weight:600;margin:0 0 10px;}
+.token-box{
+  position:relative;border:1px solid var(--line);border-radius:7px;padding:8px;
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:48px;background:#fff;
+}
+.token-box:focus-within{border-color:var(--teal);box-shadow:0 0 0 2px rgba(10,85,120,.20);}
+.token{
+  display:inline-flex;align-items:center;gap:7px;background:var(--mint-soft);border:1px solid var(--mint-line);
+  color:var(--teal);border-radius:6px;padding:5px 9px;font-size:13px;font-weight:600;
+}
+.token button{border:none;background:none;color:var(--teal);cursor:pointer;font-size:15px;line-height:1;padding:0;}
+.token-box input{flex:1;min-width:120px;border:none;outline:none;height:32px;font-size:14px;background:none;}
+.tt-list{
+  position:absolute;left:0;right:0;top:calc(100% + 5px);background:#fff;
+  border:1px solid var(--line);border-radius:8px;z-index:6;
+  box-shadow:0 10px 28px rgba(20,30,45,.14);max-height:212px;overflow:auto;
+}
+.tt-list button{
+  display:block;width:100%;text-align:left;padding:12px 13px;
+  border:none;background:#fff;font-size:14px;cursor:pointer;color:var(--ink);
+}
+.tt-list button:hover,.tt-list button.active{background:var(--mint-soft);}
+.tt-list button.add-new{color:var(--teal);font-weight:600;}
+.freq-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:20px;}
+.freq{
+  height:42px;border:1px solid var(--line);border-radius:7px;background:#fff;
+  font-size:13px;color:#3d4852;cursor:pointer;
+}
+.freq:hover{background:#f6f8f9;}
+.freq.on{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600;}
+.picker.disabled{opacity:.45;pointer-events:none;}
+
+/* Consent & signature -------------------------------------- */
+.consent-tag{color:var(--teal);font-size:14px;font-weight:600;margin:0 0 12px;}
+.consent-title{font-size:19px;font-weight:700;margin:0 0 16px;}
+.consent-sub{font-size:15px;font-weight:600;margin:0 0 10px;}
+.consent-intro{font-size:15px;color:var(--ink-2);margin:0 0 10px;}
+.consent-list{margin:0 0 22px;padding-left:20px;color:var(--ink-2);font-size:15px;line-height:1.55;}
+.consent-list li{margin-bottom:11px;}
+.attest{
+  display:flex;align-items:flex-start;gap:12px;
+  background:#fdf7e8;border:1px solid #f0e4c8;border-radius:9px;
+  padding:15px 15px;margin-bottom:24px;cursor:pointer;
+}
+.attest input{width:19px;height:19px;flex:0 0 auto;margin-top:1px;accent-color:var(--teal);}
+.attest span{color:var(--teal);font-size:14px;font-weight:600;line-height:1.5;}
+.sig-label{font-size:14px;font-weight:600;margin:0 0 9px;}
+.sig-pad{
+  display:block;width:100%;height:170px;background:#fff;
+  border:1px solid var(--line);border-radius:9px;touch-action:none;cursor:crosshair;
+}
+.btn-clear{
+  margin-top:11px;width:100%;height:42px;border-radius:8px;
+  border:1px solid #f0d3cf;background:#fff;color:#d9534f;
+  font-size:14px;cursor:pointer;
+}
+.btn-clear:hover{background:#fdf5f4;}
+
+/* Review summary & success --------------------------------- */
+.sum-card{
+  background:#fff;border:1px solid var(--line-2);border-radius:12px;
+  padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(20,30,45,.05);
+}
+.sum-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;}
+.sum-title{font-size:17px;font-weight:700;display:flex;align-items:center;gap:9px;}
+.btn-edit{
+  display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;
+  border-radius:7px;border:1px solid var(--line);background:#f5f6f7;
+  color:var(--ink-2);font-size:14px;cursor:pointer;flex:0 0 auto;
+}
+.btn-edit:hover{background:#eceef0;}
+.sum-row{font-size:15px;margin-bottom:9px;line-height:1.45;}
+.sum-row:last-child{margin-bottom:0;}
+.sum-row b{font-weight:600;}
+.sum-sub{color:var(--teal);font-size:14px;font-weight:600;margin:16px 0 9px;}
+.sum-sub:first-child{margin-top:0;}
+.sum-divider{border-top:1px solid var(--line-2);margin:16px 0;}
+.sum-avatar{
+  width:96px;height:96px;border-radius:50%;background-size:cover;background-position:center;
+  border:1px solid var(--line-2);
+}
+.sum-empty{color:var(--muted);font-size:14px;}
+.sum-consent{
+  display:flex;align-items:center;gap:12px;border:1px solid var(--line);
+  border-radius:10px;padding:13px;margin-bottom:10px;
+}
+.sum-consent .tick{
+  width:27px;height:27px;border-radius:50%;flex:0 0 auto;
+  background:var(--green-bg);color:var(--green-text);
+  display:flex;align-items:center;justify-content:center;
+}
+.sum-consent .tick.pending{background:#fdf3e2;color:#c98a1e;}
+.sum-consent .cname{font-size:15px;font-weight:600;}
+.sum-consent .cmeta{font-size:13px;color:var(--ink-2);margin-top:2px;}
+.sum-note{
+  display:flex;gap:10px;background:#e6eff4;border-radius:9px;padding:13px;
+  color:#0a5578;font-size:14px;line-height:1.45;margin-bottom:14px;
+}
+.done-wrap{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:40px 26px;
+}
+.done-badge{
+  width:88px;height:88px;border-radius:50%;background:var(--teal);
+  display:flex;align-items:center;justify-content:center;margin-bottom:24px;
+}
+.done-wrap h2{font-size:22px;margin:0 0 11px;}
+.done-wrap p{color:var(--ink-2);font-size:15px;margin:0;line-height:1.55;max-width:34ch;}
+
+/* Component motion ----------------------------------------- */
+/* stepper fills left to right */
+.stepper span{transition:background var(--dur-enter) var(--ease-out);}
+
+/* panels reveal their contents */
+.acc.open .acc-body,
+.ins-card.open .ins-body{animation:panelIn var(--dur-enter) var(--ease-out) both;}
+.acc-field{animation:riseIn var(--dur-enter) var(--ease-out) both;}
+.acc-field:nth-child(2){animation-delay:40ms;}
+.acc-field:nth-child(3){animation-delay:80ms;}
+.acc-field:nth-child(4){animation-delay:120ms;}
+
+/* things that appear in response to an action */
+.doc-chip,.file-chip,.detected{animation:riseIn var(--dur-ui) var(--ease-out) both;}
+.tt-list{animation:panelIn 160ms var(--ease-out) both;}
+.token.is-new{animation:popIn 220ms var(--ease-out) both;}
+.avatar.filled{animation:popIn 260ms var(--ease-out) both;}
+.sig-pad,.btn-clear{animation:riseIn var(--dur-ui) var(--ease-out) both;}
+
+/* hover lift on the large tap targets */
+.scan-frame{transition:transform var(--dur-ui) var(--ease),box-shadow var(--dur-ui) var(--ease);}
+.scan-frame:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(5,47,67,.28);}
+.scan-frame:active{transform:translateY(0) scale(.995);}
+.ins-card,.acc,.sum-card{transition:border-color var(--dur-ui) var(--ease),
+                                    box-shadow var(--dur-ui) var(--ease);}
+
+/* summary cards arrive in sequence */
+.sum-card{animation:riseIn var(--dur-enter) var(--ease-out) both;}
+.sum-card:nth-child(3){animation-delay:50ms;}
+.sum-card:nth-child(4){animation-delay:100ms;}
+.sum-card:nth-child(5){animation-delay:150ms;}
+.sum-card:nth-child(6){animation-delay:200ms;}
+.sum-card:nth-child(7){animation-delay:250ms;}
+.sum-card:nth-child(8){animation-delay:300ms;}
+.sum-card:nth-child(9){animation-delay:350ms;}
+.sum-card:nth-child(n+10){animation-delay:400ms;}
+
+/* success screen */
+.done-badge{animation:badgeIn 520ms var(--ease-out) both;}
+.done-wrap h2{animation:riseIn var(--dur-enter) var(--ease-out) both;animation-delay:180ms;}
+.done-wrap p{animation:riseIn var(--dur-enter) var(--ease-out) both;animation-delay:260ms;}
+
+/* bottom sheet backdrop fades while the sheet rises */
+.sheet-backdrop.open{animation:fadeIn 180ms var(--ease) both;}
+
+/* ============================================================
+   BOTTOM SHEET
+   ============================================================ */
+.sheet-backdrop{
+  position:fixed;inset:0;background:rgba(20,26,32,.55);
+  display:none;align-items:flex-end;justify-content:center;z-index:400;
+}
+body.sheet-open{overflow:hidden;}
+.sheet-backdrop.open{display:flex;}
+.sheet{
+  width:100%;max-width:var(--shell);padding:10px 10px calc(12px + env(safe-area-inset-bottom));
+  animation:rise 260ms var(--ease-out) both;
+}
+@keyframes rise{from{transform:translateY(24px);opacity:0;}to{transform:none;opacity:1;}}
+.sheet-group{background:#fff;border-radius:14px;overflow:hidden;}
+.sheet-group button{
+  width:100%;border:none;background:#fff;padding:19px 16px;
+  font-size:18px;color:#0a84ff;cursor:pointer;
+}
+.sheet-group button + button{border-top:1px solid var(--line-2);}
+.sheet-group button:hover{background:#f6f7f8;}
+.sheet-cancel{
+  margin-top:9px;width:100%;border:none;border-radius:14px;background:#fff;
+  padding:19px 16px;font-size:18px;font-weight:600;color:#0a84ff;cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+
+  <!-- ============ SCREEN 1: MOBILE NUMBER ============ -->
+  <section class="screen active" id="screen-mobile">
+    <div class="login-header">
+      <div class="tec-logo">
+        <svg width="46" height="24" viewBox="0 0 46 24" fill="none" aria-hidden="true">
+          <path d="M2 13c7.5-10 20-10 27.5 0-7.5 8.5-20 8.5-27.5 0z" fill="#fff"/>
+          <circle cx="15.7" cy="12.2" r="4.9" fill="#0a5578"/>
+          <path d="M15.7 8.2l1 2.1 2.3.3-1.7 1.5.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.5 2.3-.3z" fill="#fff"/>
+        </svg>
+        <div class="tec-word">Healthcare</div>
+      </div>
+    </div>
+
+    <div class="login-body">
+      <div class="login-top">
+        <h1>Enter Mobile Number</h1>
+        <p>We will send you an OTP to verify your mobile number</p>
+      </div>
+
+      <div class="login-card">
+        <label class="field-title" for="login-phone">Mobile Number <span style="color:var(--danger)">*</span></label>
+        <div class="phone-row">
+          <select id="login-cc" aria-label="Country code">
+            <option value="+1" selected>USD +1</option>
+            <option value="+91">IND +91</option>
+            <option value="+44">GBR +44</option>
+          </select>
+          <input id="login-phone" type="tel" inputmode="numeric" maxlength="15" placeholder="(123)-4567-890" />
+        </div>
+        <button class="btn-primary-lg" id="btn-send-otp" type="button">Send OTP</button>
+      </div>
+
+      <div class="powered">powered by <b>Healthcare</b></div>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 2: OTP ============ -->
+  <section class="screen" id="screen-otp">
+    <div class="login-header">
+      <div class="tec-logo">
+        <svg width="46" height="24" viewBox="0 0 46 24" fill="none" aria-hidden="true">
+          <path d="M2 13c7.5-10 20-10 27.5 0-7.5 8.5-20 8.5-27.5 0z" fill="#fff"/>
+          <circle cx="15.7" cy="12.2" r="4.9" fill="#0a5578"/>
+          <path d="M15.7 8.2l1 2.1 2.3.3-1.7 1.5.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.5 2.3-.3z" fill="#fff"/>
+        </svg>
+        <div class="tec-word">Healthcare</div>
+      </div>
+    </div>
+
+    <div class="login-body">
+      <div class="login-top">
+        <button class="icon-back" type="button" id="otp-back" aria-label="Back">‹</button>
+        <h1>Enter OTP</h1>
+        <p>We have sent a 4-digit code to <b id="otp-target">+1 (323)-2243-434</b></p>
+      </div>
+
+      <div class="login-card">
+        <label class="field-title">Verification Code <span style="color:var(--danger)">*</span></label>
+        <div class="otp-row" id="otp-row">
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 1" />
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 2" />
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 3" />
+          <input type="tel" inputmode="numeric" maxlength="1" placeholder="–" aria-label="Digit 4" />
+        </div>
+        <button class="btn-primary-lg" id="btn-verify" type="button" disabled>Verify</button>
+        <button class="resend" type="button" id="btn-resend">↺ Resend OTP</button>
+        <div class="otp-hint">Prototype: any 4 digits will verify.</div>
+      </div>
+
+      <div class="powered">powered by <b>Healthcare</b></div>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 3: ONBOARDING ============ -->
+  <section class="screen" id="screen-onboarding">
+    <header class="ob-header">
+      <div class="ob-logo">
+        <svg width="34" height="18" viewBox="0 0 34 18" fill="none" aria-hidden="true">
+          <path d="M1 9.5c5.5-8 15-8 20.5 0-5.5 6.5-15 6.5-20.5 0z" fill="#1b1f24"/>
+          <circle cx="11" cy="9" r="4" fill="#fff"/>
+          <path d="M11 5.8l.8 1.7 1.8.2-1.4 1.2.4 1.8L11 9.8l-1.6.9.4-1.8L8.4 7.7l1.8-.2z" fill="#1b1f24"/>
+        </svg>
+        Healthcare
+      </div>
+      <div class="stepper" id="stepper" aria-hidden="true"></div>
+      <div class="step-meta">
+        <span>Step <b id="step-num">1</b> of <b id="step-total">8</b></span>
+        <span id="step-name">Personal Details</span>
+      </div>
+    </header>
+
+    <div class="greet" id="greet">Hi Hrithika Madireddy !</div>
+
+    <main class="ob-body" id="ob-body"></main>
+
+    <footer class="ob-footer">
+      <button class="btn btn-ghost" id="btn-back" type="button">Back</button>
+      <button class="btn btn-teal" id="btn-next" type="button">Save &amp; Next</button>
+    </footer>
+  </section>
+
+  <!-- ============ BOTTOM SHEET ============ -->
+  <div class="sheet-backdrop" id="sheet" role="dialog" aria-modal="true" aria-label="Add your ID">
+    <div class="sheet">
+      <div class="sheet-group">
+        <button type="button" data-sheet="scan">Scan ID</button>
+        <button type="button" data-sheet="upload">Upload Documents</button>
+      </div>
+      <button class="sheet-cancel" type="button" data-sheet="cancel">Cancel</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   1. STATE  — single source of truth, survives Back navigation
+   ============================================================ */
+const state = {
+  patientName: '',
+  currentStep: 0,
+  idDoc: null,          // { name, size }
+  profilePhoto: null,   // data URL
+  sheetContext: 'id',   // 'id' | 'insurance'
+  insurances: [],       // saved insurance records
+  insDraft: null,       // first-time form, before any record exists
+  expandedIns: null,    // uid of the expanded accordion card
+  insView: 'form',      // 'form' | 'list'
+  editUid: null,        // uid being edited, if any
+  skippedInsurance:false,
+  referralDocs: [],     // uploaded referral letters
+  skippedReferral:false,
+  stage: 'steps',       // 'steps' | 'summary' | 'done'
+  confirmed: false,     // final attestation on the summary
+  editing: false,       // arrived at a tab via Edit on the summary
+  snapshot: null,       // state copy taken when editing starts
+  consentIndex: 0,      // which consent is on screen
+  consents: [],         // { agreed, signature } per consent
+  medOpen: null,        // which medical-history section is expanded
+  medical: {
+    noConditions:false, conditions:[],
+    noMeds:false,       medications:[],
+    habits:{ alcohol:'', smoke:'', drugs:'' },
+    noAllergies:false,  allergies:[]
+  },
+  aboutOpen: null,      // which 'about you' section is expanded
+  about: {
+    language:'English',
+    ecFirst:'', ecLast:'', ecRelation:'', ecPhone:'',
+    phName:'', phAddress:'', phCity:'', phPhone:'',
+    ethnicity:'', orientation:''
+  },
+  form: {
+    firstName:'', lastName:'', dob:'', gender:'',
+    address1:'', address2:'', city:'', stateName:'', country:'', zip:'',
+    email:'', mobile:'', commEmail:true, commSms:true
+  }
+};
+
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+/* ============================================================
+   2. STEP REGISTRY  — add a new tab by appending one object
+   ============================================================ */
+const steps = [
+  {
+    id:'personal',
+    name:'Personal Details',
+    render: renderPersonal,
+    mount: mountPersonal,
+    validate: validatePersonal
+  },
+  {
+    id:'photo',
+    name:'Profile picture',
+    render: renderPhoto,
+    mount: mountPhoto,
+    validate: () => ({ ok:true })
+  },
+  {
+    id:'insurance',
+    name:'Insurance',
+    render: renderInsurance,
+    mount: mountInsurance,
+    validate: validateInsurance
+  },
+  {
+    id:'referral',
+    name:'Referral',
+    render: renderReferral,
+    mount: mountReferral,
+    validate: () => ({ ok:true })
+  },
+  {
+    id:'about',
+    name:'About you',
+    render: renderAbout,
+    mount: mountAbout,
+    validate: () => ({ ok:true })
+  },
+  {
+    id:'medical',
+    name:'Health',
+    render: renderMedical,
+    mount: mountMedical,
+    validate: () => ({ ok:true })
+  },
+  {
+    id:'consent',
+    name:'Consent',
+    render: renderConsent,
+    mount: mountConsent,
+    validate: validateConsent,
+    back: backConsent
+  }
+];
+
+// Only name the patient once both names are in.
+function greeting(){
+  return state.patientName ? `Hi ${state.patientName} !` : 'Hi';
+}
+
+function placeholder(label){
+  return `<h2 class="step-title">${label}</h2>
+    <p class="step-lead">This tab is not built yet.</p>
+    <div class="placeholder-step">${label} fields will go here.<br>
+    Back and Save &amp; Next already work, and everything you typed in earlier tabs is kept.</div>`;
+}
+
+/* ============================================================
+   3. SCREEN ROUTING
+   ============================================================ */
+function showScreen(id){
+  $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo(0,0);
+}
+
+/* ---------- Login: mobile number ---------- */
+// digits only, masked as (999)-9999-999
+function maskPhone(raw){
+  const d = raw.replace(/\D/g, '').slice(0, 10);
+  if(d.length <= 3) return d.length ? `(${d}` : '';
+  if(d.length <= 7) return `(${d.slice(0,3)})-${d.slice(3)}`;
+  return `(${d.slice(0,3)})-${d.slice(3,7)}-${d.slice(7)}`;
+}
+
+const phoneInput = $('#login-phone');
+phoneInput.addEventListener('input', () => {
+  phoneInput.value = maskPhone(phoneInput.value);
+  phoneInput.style.borderColor = '';
+});
+phoneInput.addEventListener('keydown', e => {
+  // let control keys through, block anything that is not a digit
+  if(e.key.length === 1 && !/\d/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+});
+
+$('#btn-send-otp').addEventListener('click', () => {
+  const cc = $('#login-cc').value;
+  const num = $('#login-phone').value.replace(/\D/g,'');
+  if(num.length < 10){
+    $('#login-phone').focus();
+    $('#login-phone').style.borderColor = 'var(--danger)';
+    return;
+  }
+  $('#login-phone').style.borderColor = '';
+  state.form.mobile = num;
+  $('#otp-target').textContent = cc + ' ' + maskPhone(num);
+  showScreen('screen-otp');
+  $$('#otp-row input')[0].focus();
+});
+
+/* ---------- Login: OTP ---------- */
+const otpInputs = $$('#otp-row input');
+otpInputs.forEach((box, i) => {
+  box.addEventListener('input', () => {
+    box.value = box.value.replace(/\D/g,'');
+    if(box.value && i < otpInputs.length - 1) otpInputs[i+1].focus();
+    $('#btn-verify').disabled = otpInputs.some(b => !b.value);
+  });
+  box.addEventListener('keydown', e => {
+    if(e.key === 'Backspace' && !box.value && i > 0) otpInputs[i-1].focus();
+  });
+});
+$('#btn-verify').addEventListener('click', () => {
+  state.currentStep = 0;
+  showScreen('screen-onboarding');
+  renderStep();
+});
+$('#otp-back').addEventListener('click', () => showScreen('screen-mobile'));
+$('#btn-resend').addEventListener('click', () => {
+  otpInputs.forEach(b => b.value = '');
+  $('#btn-verify').disabled = true;
+  otpInputs[0].focus();
+});
+
+/* ============================================================
+   4. ONBOARDING SHELL
+   ============================================================ */
+// restart the entrance animation on the body
+function playEnter(){
+  const body = $('#ob-body');
+  body.classList.remove('view-enter');
+  void body.offsetWidth;          // force reflow so the animation replays
+  body.classList.add('view-enter');
+}
+
+function renderStep(){
+  if(state.stage === 'summary') return renderSummary();
+  if(state.stage === 'done')    return renderDone();
+  chrome(true, true, true);
+
+  const step = steps[state.currentStep];
+
+  // stepper
+  $('#stepper').innerHTML = steps.map((_, i) => {
+    const cls = i < state.currentStep ? 'done' : (i === state.currentStep ? 'current' : '');
+    return `<span class="${cls}"></span>`;
+  }).join('');
+
+  $('#step-num').textContent   = state.currentStep + 1;
+  $('#step-total').textContent = steps.length;
+  $('#step-name').textContent  = step.name;
+  $('#greet').textContent      = greeting();
+
+  $('#ob-body').innerHTML = step.render();
+  step.mount();
+
+  $('.ob-footer').classList.toggle('editing', state.editing);
+  if(state.editing){
+    $('#btn-back').style.visibility = 'visible';
+    $('#btn-back').textContent = 'Cancel';
+    $('#btn-next').textContent = 'Save changes';
+  } else {
+    $('#btn-back').style.visibility = state.currentStep === 0 ? 'hidden' : 'visible';
+    $('#btn-back').textContent = 'Back';
+    // Consents page with Next; Submit belongs to the summary screen.
+    $('#btn-next').textContent = 'Next';
+  }
+  $('#ob-body').scrollTop = 0;
+  playEnter();
+}
+
+$('#btn-next').addEventListener('click', () => {
+  if(state.stage === 'summary'){
+    state.stage = 'done';
+    renderStep();
+    return;
+  }
+  if(state.editing) return saveEdit();
+
+  const step = steps[state.currentStep];
+  const result = step.validate();
+  if(!result.ok){
+    const firstBad = $('#ob-body .invalid');
+    if(firstBad) firstBad.scrollIntoView({block:'center', behavior:'smooth'});
+    return;
+  }
+  if(state.currentStep < steps.length - 1){
+    state.currentStep++;
+    renderStep();
+  } else {
+    state.stage = 'summary';
+    renderStep();
+  }
+});
+
+$('#btn-back').addEventListener('click', () => {
+  if(state.stage === 'summary'){
+    state.stage = 'steps';
+    renderStep();
+    return;
+  }
+  if(state.editing) return cancelEdit();
+
+  const step = steps[state.currentStep];
+  if(step.back && step.back()) return;   // handled inside the step
+  if(state.currentStep > 0){
+    steps[state.currentStep].validate.capture && steps[state.currentStep].validate.capture();
+    captureCurrent();
+    state.currentStep--;
+    renderStep();
+  }
+});
+
+// Persist whatever is typed before leaving a step
+function captureCurrent(){
+  const id = steps[state.currentStep].id;
+  if(id === 'personal')  readPersonal();
+  if(id === 'insurance') readInsurance(formRecord());
+  if(id === 'about')     readAbout();
+}
+
+/* ============================================================
+   5. STEP 1 — PERSONAL DETAILS
+   ============================================================ */
+function field(name, label, opts = {}){
+  const {type='text', placeholder='', required=false, span=false, highlight=false, value='', max=''} = opts;
+  return `<div class="field ${span?'span-2':''} ${highlight?'highlight':''}" data-field="${name}">
+    <label for="f-${name}">${label}${required?' <span class="req">*</span>':''}</label>
+    <input id="f-${name}" name="${name}" type="${type}" placeholder="${placeholder}" value="${value}"${max?` max="${max}"`:''} />
+    <div class="err">This field is required</div>
+  </div>`;
+}
+
+function today(){
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function renderPersonal(){
+  const f = state.form;
+  const doc = state.idDoc;
+
+  return `
+    <h2 class="step-title">Scan your photo ID</h2>
+    <p class="step-lead">Line the card up inside the frame. We'll read the name, date of birth, ID number and address automatically.</p>
+
+    <button class="scan-frame" id="scan-frame" type="button">
+      <span class="corner c1"></span><span class="corner c2"></span>
+      <span class="corner c3"></span><span class="corner c4"></span>
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round">
+        <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/>
+        <rect x="8" y="9.5" width="8" height="5.5" rx="1"/>
+      </svg>
+      <span class="scan-main">Tap to scan ID</span>
+      <span class="scan-sub">or upload photo of your ID</span>
+    </button>
+
+    <div id="scan-result">
+      ${doc ? fileChipHTML(doc) : ''}
+    </div>
+
+    <div class="divider">or enter manually</div>
+
+    <div class="grid">
+      ${field('firstName','First Name',{required:true, placeholder:'Enter first name', value:f.firstName})}
+      ${field('lastName','Last Name',{required:true, placeholder:'Enter last name', value:f.lastName})}
+      ${field('dob','Date of Birth',{required:true, type:'date', value:f.dob, max:today()})}
+      <div class="field" data-field="gender">
+        <label for="f-gender">Gender <span class="req">*</span></label>
+        <select id="f-gender" name="gender">
+          <option value="">Select gender</option>
+          ${['Male','Female','Other','Prefer not to say']
+            .map(g => `<option ${f.gender===g?'selected':''}>${g}</option>`).join('')}
+        </select>
+        <div class="err">This field is required</div>
+      </div>
+      ${field('address1','Address Line 1',{span:true, highlight:true, placeholder:'Your street address', value:f.address1})}
+      ${field('address2','Address Line 2',{span:true, placeholder:'Apartment, suite, unit', value:f.address2})}
+      ${field('city','City',{placeholder:'Enter city name', value:f.city})}
+      ${field('stateName','State',{placeholder:'Enter state', value:f.stateName})}
+      ${field('country','Country',{placeholder:'Enter country', value:f.country})}
+      ${field('zip','ZIP Code',{placeholder:'Enter ZIP code', value:f.zip})}
+      ${field('email','Email',{required:true, type:'email', placeholder:'name@example.com', value:f.email})}
+      ${field('mobile','Mobile Number',{required:true, type:'tel', placeholder:'(123)-4567-890', value:maskPhone(f.mobile)})}
+    </div>
+
+    <div class="comm-title">Send all future communication, notices and alerts to:</div>
+    <p class="comm-sub">(can select multiple)</p>
+    <div class="comm-row">
+      <label class="check"><input type="checkbox" id="c-email" ${f.commEmail?'checked':''}/> Email</label>
+      <label class="check"><input type="checkbox" id="c-sms" ${f.commSms?'checked':''}/> SMS</label>
+    </div>
+  `;
+}
+
+function fileChipHTML(doc){
+  return `<div class="file-chip">
+      <span class="fi">▤</span>
+      <span>
+        <div class="fname">${doc.name}</div>
+        <div class="fsize">✓ ${doc.size}</div>
+      </span>
+      <button type="button" id="remove-doc" aria-label="Remove document">×</button>
+    </div>
+    <div class="detected">✓ Name, DOB are detected</div>`;
+}
+
+function mountPersonal(){
+  $('#scan-frame').addEventListener('click', () => openSheet('id'));
+  bindRemoveDoc();
+
+  // US format, digits only
+  const mob = $('#f-mobile');
+  mob.addEventListener('input', () => { mob.value = maskPhone(mob.value); });
+  mob.addEventListener('keydown', e => {
+    if(e.key.length === 1 && !/\d/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+  });
+  // keep state in sync as the user types, so Back never loses data
+  $$('#ob-body input, #ob-body select').forEach(el => {
+    const sync = () => {
+      readPersonal();
+      const wrap = el.closest ? el.closest('.field') : null;
+      if(wrap && el.value.trim()) wrap.classList.remove('invalid');
+    };
+    el.addEventListener('input', sync);
+    el.addEventListener('change', sync);
+  });
+}
+
+function bindRemoveDoc(){
+  const btn = $('#remove-doc');
+  if(btn) btn.addEventListener('click', () => {
+    state.idDoc = null;
+    $('#scan-result').innerHTML = '';
+  });
+}
+
+function readPersonal(){
+  const g = n => { const el = $('#f-'+n); return el ? el.value : ''; };
+  Object.assign(state.form, {
+    firstName:g('firstName'), lastName:g('lastName'), dob:g('dob'), gender:g('gender'),
+    address1:g('address1'), address2:g('address2'), city:g('city'), stateName:g('stateName'),
+    country:g('country'), zip:g('zip'), email:g('email'), mobile:g('mobile'),
+    commEmail: $('#c-email') ? $('#c-email').checked : true,
+    commSms:   $('#c-sms')   ? $('#c-sms').checked   : true
+  });
+
+  const first = state.form.firstName.trim();
+  const last  = state.form.lastName.trim();
+  state.patientName = (first && last) ? `${first} ${last}` : '';
+  const banner = $('#greet');
+  if(banner) banner.textContent = greeting();
+}
+
+function validatePersonal(){
+  readPersonal();
+  const f = state.form;
+  let ok = true;
+
+  const required = {
+    firstName:'First name is required',
+    lastName :'Last name is required',
+    dob      :'Date of birth is required',
+    gender   :'Please select a gender',
+    email    :'Email is required',
+    mobile   :'Mobile number is required'
+  };
+  Object.entries(required).forEach(([name, msg]) => {
+    ok = setValid(name, !!String(f[name]).trim(), msg) && ok;
+  });
+
+  // format conditions, checked only once something has been entered
+  if(String(f.firstName).trim())
+    ok = setValid('firstName', /^[A-Za-z][A-Za-z '.-]*$/.test(f.firstName.trim()),
+                  'Use letters only') && ok;
+
+  if(String(f.lastName).trim())
+    ok = setValid('lastName', /^[A-Za-z][A-Za-z '.-]*$/.test(f.lastName.trim()),
+                  'Use letters only') && ok;
+
+  if(String(f.dob).trim()){
+    const dob = new Date(f.dob);
+    const today = new Date(); today.setHours(0,0,0,0);
+    ok = setValid('dob', dob <= today, 'Date of birth cannot be in the future') && ok;
+  }
+
+  if(String(f.email).trim())
+    ok = setValid('email', /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(f.email.trim()),
+                  'Enter a valid email address') && ok;
+
+  if(String(f.mobile).trim())
+    ok = setValid('mobile', f.mobile.replace(/\D/g,'').length === 10,
+                  'Enter a 10-digit mobile number') && ok;
+
+  return { ok };
+}
+
+function setValid(name, valid, message){
+  const wrap = $(`[data-field="${name}"]`);
+  if(!wrap) return valid;
+  wrap.classList.toggle('invalid', !valid);
+  if(!valid && message) $('.err', wrap).textContent = message;
+  return valid;
+}
+
+/* ============================================================
+   6. STEP 2 — PROFILE PICTURE
+   ============================================================ */
+function renderPhoto(){
+  const p = state.profilePhoto;
+  return `
+    <h2 class="step-title">Profile picture</h2>
+    <p class="step-lead">Please upload a clear photo of yourself.</p>
+    <div class="avatar-wrap">
+      <div class="avatar ${p?'filled':''}" id="avatar" style="${p?`background-image:url('${p}')`:''}">
+        ${p ? '<button class="remove" id="remove-photo" type="button" aria-label="Remove photo">×</button>' : `
+          <svg width="62" height="62" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="12" cy="8.4" r="3.6"/><path d="M5.4 19c1.2-3.2 4-4.6 6.6-4.6s5.4 1.4 6.6 4.6"/>
+          </svg>`}
+      </div>
+      <button class="btn-outline" id="take-photo" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+          <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.2-2h8.2l1.2 2h2.2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/>
+          <circle cx="12" cy="13" r="3.4"/>
+        </svg>
+        Take / upload photo
+      </button>
+      ${p ? '' : '<button class="link-skip" id="skip-photo" type="button">Skip for now — I\'ll add it at the front desk</button>'}
+    </div>
+    <input type="file" id="photo-input" accept="image/*" hidden />
+  `;
+}
+
+function mountPhoto(){
+  $('#take-photo').addEventListener('click', () => $('#photo-input').click());
+  $('#photo-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { state.profilePhoto = reader.result; renderStep(); };
+    reader.readAsDataURL(file);
+  });
+  const rm = $('#remove-photo');
+  if(rm) rm.addEventListener('click', () => { state.profilePhoto = null; renderStep(); });
+  const skip = $('#skip-photo');
+  if(skip) skip.addEventListener('click', () => { state.currentStep++; renderStep(); });
+}
+
+/* ============================================================
+   6b. STEP 3 — INSURANCE
+   ============================================================ */
+const COVERAGE_TYPES = ['Primary Insurance','Secondary Insurance','Other Insurance'];
+const POLICY_HOLDERS = ['Self','Spouse','Parent','Child','Other'];
+const PAYORS = ['(NLH) Horizon Health Insurance','(NLH) Summit Life and Health Insurance',
+                'Aetna','Blue Cross Blue Shield','UnitedHealthcare'];
+const PLANS   = ['Group D Coverage','Insurance D Plan','PPO Gold 2000','HMO Silver 1500'];
+
+function blankInsurance(){
+  return {
+    uid: 'ins-' + (++insUid),
+    docs: [], coverageType:'', policyHolder:'', payor:'', plan:'',
+    policyId:'', groupId:'', effective:'', expiry:'', saved:false
+  };
+}
+let insUid = 0;
+
+function renderInsurance(){
+  if(state.insView === 'form' || !state.insurances.length) return renderInsuranceForm();
+  return renderInsuranceList();
+}
+
+/* ---------- the form (first entry, add new, or edit) ---------- */
+function renderInsuranceForm(){
+  if(!state.insDraft) state.insDraft = blankInsurance();
+  const first = !state.insurances.length;
+  return `
+    ${insHeading()}
+    ${scanFrameHTML()}
+    ${first ? `<button class="link-skip-inline" id="skip-insurance" type="button">Skip for now - I don't have insurance</button>` : ''}
+    <div id="ins-docs">${docListHTML(state.insDraft.docs)}</div>
+    <div class="divider">or enter manually</div>
+    <div class="ins-scope">${insFieldsHTML(state.insDraft)}</div>
+    <div class="ins-actions ${first ? 'single' : ''}">
+      ${first ? '' : '<button class="btn-remove" type="button" id="close-form">Close</button>'}
+      <button class="btn-save" type="button" id="save-ins">Save insurance</button>
+    </div>`;
+}
+
+/* ---------- saved records ---------- */
+function renderInsuranceList(){
+  return `
+    ${insHeading()}
+    ${state.insurances.map(renderInsCard).join('')}
+    <button class="btn-add-ins" id="add-insurance" type="button">Add new insurance</button>`;
+}
+
+function renderInsCard(rec){
+  const open = state.expandedIns === rec.uid;
+  const sub  = [rec.payor, rec.plan].filter(Boolean).join(' ');
+  return `
+    <div class="ins-card ${open?'open':''}" data-uid="${rec.uid}">
+      <button class="ins-head" type="button" data-toggle="${rec.uid}">
+        <span>
+          <span class="ins-type">${esc(rec.coverageType)}</span>
+          <span class="ins-sub">${esc(sub)}</span>
+        </span>
+        <span class="chev">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </span>
+      </button>
+      <div class="ins-body">
+        ${open ? `
+          ${scanFrameHTML()}
+          <div id="ins-docs">${docListHTML(rec.docs)}</div>
+          <div class="divider">or enter manually</div>
+          <div class="ins-scope">${insFieldsHTML(rec)}</div>
+          <div class="ins-actions">
+            <button class="btn-remove" type="button" data-remove="${rec.uid}">Remove</button>
+            <button class="btn-save" type="button" id="save-card">Save</button>
+          </div>` : ''}
+      </div>
+    </div>`;
+}
+
+/* The record the visible form writes to: the standalone draft when
+   adding a new insurance, otherwise the expanded card's own record. */
+function formRecord(){
+  if(state.insView === 'form' || !state.insurances.length) return state.insDraft;
+  return state.insurances.find(r => r.uid === state.expandedIns) || null;
+}
+
+function insHeading(){
+  return `<h2 class="step-title">Scan your Insurance Card</h2>
+    <p class="step-lead">Take or upload clear photos of the front and back of your insurance card.</p>`;
+}
+
+function scanFrameHTML(){
+  return `<button class="scan-frame" id="scan-insurance" type="button">
+      <span class="corner c1"></span><span class="corner c2"></span>
+      <span class="corner c3"></span><span class="corner c4"></span>
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round">
+        <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/>
+        <rect x="8" y="9.5" width="8" height="5.5" rx="1"/>
+      </svg>
+      <span class="scan-main">Tap to scan insurance card</span>
+      <span class="scan-sub">or upload a photo</span>
+    </button>`;
+}
+
+function docListHTML(docs){
+  return (docs || []).map((d, i) => `
+    <div class="doc-chip">
+      <span class="thumb"><span></span></span>
+      <span>
+        <div class="fname">${esc(d.name)}</div>
+        <div class="fsize">✓ ${d.size}</div>
+      </span>
+      <button type="button" data-doc="${i}" aria-label="Remove ${esc(d.name)}">×</button>
+    </div>`).join('');
+}
+
+function insFieldsHTML(r){
+  return `
+    ${selField('coverageType','Coverage Type', COVERAGE_TYPES, r.coverageType, true, 'Select coverage type')}
+    ${selField('policyHolder','Policy Holder', POLICY_HOLDERS, r.policyHolder, true, 'Select policy holder')}
+    ${selField('payor','Payor', PAYORS, r.payor, true, 'Select payor')}
+    ${selField('plan','Plan', PLANS, r.plan, true, 'Select Plan')}
+    ${insField('policyId','Policy ID',{required:true, placeholder:'Enter policy ID', value:r.policyId})}
+    ${insField('groupId','Group ID',{placeholder:'Enter group ID', value:r.groupId})}
+    ${insField('effective','Effective Date',{required:true, type:'date', value:r.effective, max:today()})}
+    ${insField('expiry','Expiry Date',{required:true, type:'date', value:r.expiry, min:today()})}`;
+}
+
+function selField(name, label, options, value, required, placeholder){
+  return `<div class="field" data-field="${name}">
+    <label for="i-${name}">${label}</label>
+    <select id="i-${name}" name="${name}" class="${value?'':'empty'}">
+      <option value="">${esc(placeholder)}</option>
+      ${options.map(o=>`<option ${value===o?'selected':''}>${esc(o)}</option>`).join('')}
+    </select>
+    <div class="err">This field is required</div>
+  </div>`;
+}
+
+function insField(name, label, opts = {}){
+  const {type='text', placeholder='', required=false, value='', min='', max=''} = opts;
+  return `<div class="field" data-field="${name}">
+    <label for="i-${name}">${label}</label>
+    <input id="i-${name}" name="${name}" type="${type}" placeholder="${placeholder}" value="${esc(value)}"${min?` min="${min}"`:''}${max?` max="${max}"`:''} />
+    <div class="err">This field is required</div>
+  </div>`;
+}
+
+function esc(s){
+  return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// yyyy-mm-dd (what date inputs return) -> mm-dd-yyyy for display
+function usDate(v){
+  if(!v) return '';
+  const [y, m, d] = String(v).split('-');
+  return d ? `${m}-${d}-${y}` : v;
+}
+
+function mountInsurance(){
+  const frame = $('#scan-insurance');
+  if(frame) frame.addEventListener('click', () => openSheet('insurance'));
+
+  $$('[data-doc]').forEach(btn => btn.addEventListener('click', () => {
+    const rec = formRecord();
+    rec.docs.splice(Number(btn.dataset.doc), 1);
+    $('#ins-docs').innerHTML = docListHTML(rec.docs);
+    mountInsurance();
+  }));
+
+  // ---- list view ----
+  $$('[data-toggle]').forEach(btn => btn.addEventListener('click', () => {
+    const uid = btn.dataset.toggle;
+    readInsurance(formRecord());
+    state.expandedIns = state.expandedIns === uid ? null : uid;
+    renderStep();
+  }));
+
+  const add = $('#add-insurance');
+  if(add) add.addEventListener('click', () => {
+    state.insDraft = blankInsurance();
+    state.editUid  = null;
+    state.insView  = 'form';
+    state.expandedIns = null;
+    renderStep();
+  });
+
+  $$('[data-remove]').forEach(btn => btn.addEventListener('click', () => {
+    dropRecord(btn.dataset.remove);
+    state.expandedIns = null;
+    renderStep();
+  }));
+
+  // ---- form view ----
+  const save = $('#save-ins');
+  if(save) save.addEventListener('click', () => { if(commitDraft()) renderStep(); });
+
+  // inline save on an expanded card
+  const saveCard = $('#save-card');
+  if(saveCard) saveCard.addEventListener('click', () => {
+    const rec = formRecord();
+    readInsurance(rec);
+    if(!checkInsurance(rec)) return;
+    state.expandedIns = null;
+    renderStep();
+  });
+
+  const close = $('#close-form');
+  if(close) close.addEventListener('click', () => {
+    // discard the draft; saved records are untouched
+    state.insDraft = null;
+    state.editUid  = null;
+    state.insView  = 'list';
+    renderStep();
+  });
+
+  const skip = $('#skip-insurance');
+  if(skip) skip.addEventListener('click', () => {
+    state.insurances = [];
+    state.insDraft = null;
+    state.skippedInsurance = true;
+    state.currentStep++;
+    renderStep();
+  });
+
+  $$('#ob-body input, #ob-body select').forEach(el => {
+    el.addEventListener('change', () => {
+      if(el.tagName === 'SELECT') el.classList.toggle('empty', !el.value);
+      readInsurance(formRecord());
+    });
+    el.addEventListener('input', () => readInsurance(formRecord()));
+  });
+}
+
+function dropRecord(uid){
+  const i = state.insurances.findIndex(r => r.uid === uid);
+  if(i > -1) state.insurances.splice(i, 1);
+  if(!state.insurances.length) state.insDraft = blankInsurance();
+}
+
+const INS_FIELDS = ['coverageType','policyHolder','payor','plan','policyId','groupId','effective','expiry'];
+const INS_REQUIRED = [];   // no mandatory insurance fields
+
+// Nothing typed and nothing uploaded — treat it as "no insurance".
+function isBlankInsurance(rec){
+  if(!rec) return true;
+  if(rec.docs && rec.docs.length) return false;
+  return INS_FIELDS.every(n => !String(rec[n] ?? '').trim());
+}
+
+function readInsurance(rec){
+  if(!rec) return;
+  INS_FIELDS.forEach(n => {
+    const el = $('#i-'+n);
+    if(el) rec[n] = el.value;
+  });
+}
+
+function checkInsurance(rec){
+  let ok = true;
+  INS_REQUIRED.forEach(n => ok = setValid(n, !!String(rec[n]).trim(), 'This field is required') && ok);
+
+  const now = today();
+  if(String(rec.effective).trim())
+    ok = setValid('effective', rec.effective <= now,
+                  'Effective date cannot be in the future') && ok;
+
+  // one verdict for expiry, so a later rule cannot clear an earlier failure
+  if(String(rec.expiry).trim()){
+    let msg = '';
+    if(rec.expiry < now) msg = 'Expiry date cannot be in the past';
+    else if(String(rec.effective).trim() && rec.expiry <= rec.effective)
+      msg = 'Expiry date must come after the effective date';
+    ok = setValid('expiry', !msg, msg) && ok;
+  }
+  if(!ok){
+    const bad = $('#ob-body .invalid');
+    if(bad) bad.scrollIntoView({block:'center', behavior:'smooth'});
+  }
+  return ok;
+}
+
+// Validate the open form, store it, and return to the accordion list.
+function commitDraft(){
+  const d = state.insDraft;
+  readInsurance(d);
+  if(isBlankInsurance(d)) return false;      // never store an empty record
+  if(!checkInsurance(d)) return false;
+  d.saved = true;
+  if(state.editUid){
+    const i = state.insurances.findIndex(r => r.uid === state.editUid);
+    state.insurances[i] = d;
+    state.expandedIns = d.uid;
+  } else {
+    state.insurances.push(d);
+    state.expandedIns = null;
+  }
+  state.insDraft = null;
+  state.editUid  = null;
+  state.insView  = 'list';
+  return true;
+}
+
+function validateInsurance(){
+  if(state.skippedInsurance && !state.insurances.length) return { ok:true };
+
+  // A form is on screen.
+  if(state.insView === 'form' || !state.insurances.length){
+    readInsurance(state.insDraft);
+    if(isBlankInsurance(state.insDraft)){
+      // patient has no insurance to add — just carry on
+      state.insDraft = null;
+      state.insView = state.insurances.length ? 'list' : 'form';
+      return { ok:true };
+    }
+    if(!commitDraft()) return { ok:false };
+    renderStep();
+    return { ok:false };
+  }
+
+  // An accordion is open in edit mode.
+  if(state.expandedIns){
+    const rec = formRecord();
+    readInsurance(rec);
+    if(isBlankInsurance(rec)){
+      dropRecord(rec.uid);
+      state.expandedIns = null;
+      return { ok:true };
+    }
+    if(!checkInsurance(rec)) return { ok:false };
+    state.expandedIns = null;
+    renderStep();
+    return { ok:false };
+  }
+  return { ok:true };
+}
+
+/* ============================================================
+   6c. STEP 4 — REFERRAL LETTER
+   ============================================================ */
+function renderReferral(){
+  return `
+    <h2 class="step-title">Have a referral letter?</h2>
+    <p class="step-lead">Upload your referral letter here. We'll use it to identify your referral provider and the reason for your visit.</p>
+
+    <button class="scan-frame" id="upload-referral" type="button">
+      <span class="corner c1"></span><span class="corner c2"></span>
+      <span class="corner c3"></span><span class="corner c4"></span>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round">
+        <rect x="2.6" y="5.2" width="18.8" height="13.6" rx="2"/>
+        <path d="M3.4 6.4l8.6 6.6 8.6-6.6"/>
+      </svg>
+      <span class="scan-main">Tap to upload your referral letter</span>
+      <span class="scan-sub">PDF, Word document, or Image</span>
+    </button>
+
+    <input type="file" id="referral-input" accept=".pdf,.doc,.docx,image/*" hidden />
+
+    ${state.referralDocs.length ? '' :
+      '<button class="link-skip-inline" id="skip-referral" type="button">Skip &mdash; no referral</button>'}
+
+    <div id="ref-docs">${docListHTML(state.referralDocs)}</div>
+    ${state.referralDocs.length ?
+      '<div class="detected">✓ Referring provider and reason for visit detected</div>' : ''}`;
+}
+
+function mountReferral(){
+  $('#upload-referral').addEventListener('click', () => $('#referral-input').click());
+
+  $('#referral-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if(file) attachReferral(file.name, formatSize(file.size));
+  });
+
+  $$('[data-doc]').forEach(btn => btn.addEventListener('click', () => {
+    state.referralDocs.splice(Number(btn.dataset.doc), 1);
+    renderStep();
+  }));
+
+  const skip = $('#skip-referral');
+  if(skip) skip.addEventListener('click', () => {
+    state.referralDocs = [];
+    state.skippedReferral = true;
+    state.currentStep++;
+    renderStep();
+  });
+}
+
+function attachReferral(name, size){
+  state.referralDocs.push({ name, size });
+  state.skippedReferral = false;
+  renderStep();
+}
+
+function formatSize(bytes){
+  return (bytes / 1024).toFixed(1) + ' KB';
+}
+
+/* ============================================================
+   6d. STEP 5 — A LITTLE MORE ABOUT YOU
+   ============================================================ */
+const LANGUAGES   = ['English','Spanish','Vietnamese','Mandarin','Hindi','Other'];
+const RELATIONS   = ['Spouse','Parent','Child','Sibling','Friend','Other'];
+const ETHNICITIES = ['Hispanic or Latino','Not Hispanic or Latino','Asian','Black or African American',
+                     'White','Native Hawaiian or Pacific Islander','American Indian or Alaska Native',
+                     'Other','Prefer not to say'];
+const ORIENTATIONS= ['Straight','Gay or Lesbian','Bisexual','Something else','Prefer not to say'];
+
+function renderAbout(){
+  const a = state.about;
+  return `
+    <h2 class="step-title">A little more about you</h2>
+    <p class="step-lead">Answering these questions will help us serve you better</p>
+
+    ${accordion('language','Language', `
+      ${accSelect('language','Preferred language', LANGUAGES, a.language, 'Select language')}
+    `)}
+
+    ${accordion('emergency','Emergency Contact', `
+      ${accInput('ecFirst','First Name', a.ecFirst, 'Enter first name')}
+      ${accInput('ecLast','Last Name', a.ecLast, 'Enter last name')}
+      ${accSelect('ecRelation','Relation to you', RELATIONS, a.ecRelation, 'Select')}
+      ${accInput('ecPhone','Phone Number', maskPhone(a.ecPhone), '(123)-4567-890', 'tel')}
+    `)}
+
+    ${accordion('pharmacy','Preferred Pharmacy', `
+      ${accInput('phName','Pharmacy Name', a.phName, 'Enter pharmacy name')}
+      ${accInput('phAddress','Address', a.phAddress, 'Enter pharmacy address')}
+      ${accInput('phCity','City', a.phCity, 'Enter city name')}
+      ${accInput('phPhone','Phone Number', maskPhone(a.phPhone), '(123)-4567-890', 'tel')}
+    `)}
+
+    ${accordion('more','More Info', `
+      ${accSelect('ethnicity','Ethnicity', ETHNICITIES, a.ethnicity, 'Select')}
+      ${accSelect('orientation','Sexual Orientation', ORIENTATIONS, a.orientation, 'Select')}
+    `)}`;
+}
+
+function accordion(key, title, body){
+  const open = state.aboutOpen === key;
+  return `
+    <div class="acc ${open?'open':''}">
+      <button class="acc-head" type="button" data-acc="${key}">
+        <span>${title}</span>
+        <span class="acc-chev">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+      <div class="acc-body">${open ? body : ''}</div>
+    </div>`;
+}
+
+function accInput(name, label, value, placeholder='', type='text'){
+  return `<div class="acc-field">
+    <label for="a-${name}">${label}</label>
+    <input id="a-${name}" data-about="${name}" type="${type}" placeholder="${placeholder}" value="${esc(value)}" />
+  </div>`;
+}
+
+function accSelect(name, label, options, value, placeholder){
+  return `<div class="acc-field">
+    <label for="a-${name}">${label}</label>
+    <select id="a-${name}" data-about="${name}" class="${value?'':'empty'}">
+      <option value="">${esc(placeholder)}</option>
+      ${options.map(o=>`<option ${value===o?'selected':''}>${esc(o)}</option>`).join('')}
+    </select>
+  </div>`;
+}
+
+function mountAbout(){
+  // US format, digits only, on both phone fields
+  ['ecPhone','phPhone'].forEach(n => {
+    const el = $('#a-' + n);
+    if(!el) return;
+    el.addEventListener('input', () => {
+      el.value = maskPhone(el.value);
+      state.about[n] = el.value;
+    });
+    el.addEventListener('keydown', e => {
+      if(e.key.length === 1 && !/\d/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+    });
+  });
+
+  $$('[data-acc]').forEach(btn => btn.addEventListener('click', () => {
+    readAbout();
+    const key = btn.dataset.acc;
+    state.aboutOpen = state.aboutOpen === key ? null : key;
+    renderStep();
+  }));
+
+  $$('[data-about]').forEach(el => {
+    const sync = () => {
+      state.about[el.dataset.about] = el.value;
+      if(el.tagName === 'SELECT') el.classList.toggle('empty', !el.value);
+    };
+    el.addEventListener('input', sync);
+    el.addEventListener('change', sync);
+  });
+}
+
+function readAbout(){
+  $$('[data-about]').forEach(el => state.about[el.dataset.about] = el.value);
+}
+
+/* ============================================================
+   6e. STEP 6 — MEDICAL HISTORY
+   ============================================================ */
+const MED_SECTIONS = {
+  conditions: {
+    key:'conditions', flag:'noConditions',
+    title:'Health Issues', icon:'plus',
+    check:"I don't have any health conditions.",
+    help:'Please type here to add your health conditions...',
+    library:['Hypertension','Hyperlipidemia','Thyroid','Type 2 Diabetes','Asthma','Arthritis',
+             'Glaucoma','Cataracts','Dry Eye','Type 1 Diabetes','Typhoid','Tyrosinemia','Chronic Lymphocytic Leukemia','Non-Hodgkin Lymphoma',
+             'Hypothyroidism','Hyperthyroidism','Migraine','Anemia','Epilepsy','Osteoporosis','Sleep Apnea',
+             'Macular Degeneration','Retinal Detachment','Uveitis','Keratoconus','Coronary Artery Disease',
+             'Chronic Kidney Disease','Gastritis','Gastroesophageal Reflux']
+  },
+  medications: {
+    key:'medications', flag:'noMeds',
+    title:'Medications You Are Taking', icon:'pill',
+    check:"I'm not taking any medications.",
+    help:'Please type here to add meds...',
+    library:['Metformin','Lisinopril','Atorvastatin','Levothyroxine','Amlodipine','Omeprazole',
+             'Latanoprost','Timolol','Aspirin','Ibuprofen','Insulin','Prednisone','Warfarin','Gabapentin','Sertraline',
+             'Albuterol','Losartan','Simvastatin','Brimonidine','Dorzolamide','Artificial Tears']
+  },
+  habits: {
+    key:'habits', type:'frequency',
+    title:'Daily Habits', icon:'pin',
+    questions:[
+      { id:'alcohol', label:'How often do you drink alcohol?' },
+      { id:'smoke',   label:'Do you smoke ?' },
+      { id:'drugs',   label:'Do you use recreational drugs or substances?' }
+    ],
+    options:['Regularly','Occasionally','Not anymore','Never']
+  },
+  allergies: {
+    key:'allergies', flag:'noAllergies',
+    title:'Allergies Information', icon:'dot',
+    check:"I don't have any allergies",
+    help:'Please type here to add your allergies...',
+    library:['Penicillin','Sulfa drugs','Latex','Pollen','Dust mites','Peanuts','Shellfish','Iodine','Aspirin','Codeine','Eggs','Soy','Bee stings','Adhesive tape','Contrast dye','Pet dander']
+  }
+};
+
+const MED_ICONS = {
+  plus:'<svg class="acc-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  pill:'<svg class="acc-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e08a3c" stroke-width="2" stroke-linecap="round"><rect x="2.6" y="8.4" width="18.8" height="7.2" rx="3.6"/><path d="M12 8.4v7.2"/></svg>',
+  pin:'<svg class="acc-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d9534f" stroke-width="2" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
+  dot:'<svg class="acc-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="var(--teal)" stroke="none"/></svg>'
+};
+
+function renderMedical(){
+  return `
+    <h2 class="step-title">Medical History</h2>
+    <p class="step-lead">Your answers help us provide better care.</p>
+    ${Object.values(MED_SECTIONS).map(renderMedSection).join('')}`;
+}
+
+function renderMedSection(cfg){
+  const open = state.medOpen === cfg.key;
+  return `
+    <div class="acc ${open?'open':''}">
+      <button class="acc-head" type="button" data-med="${cfg.key}">
+        <span class="acc-label">${MED_ICONS[cfg.icon]}${cfg.title}</span>
+        <span class="acc-chev">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+      <div class="acc-body">${open ? pickerHTML(cfg) : ''}</div>
+    </div>`;
+}
+
+function pickerHTML(cfg){
+  if(cfg.type === 'frequency') return frequencyHTML(cfg);
+  const off = cfg.flag && state.medical[cfg.flag];
+  return `
+    ${cfg.check ? `<label class="med-check">
+      <input type="checkbox" id="med-flag" ${off?'checked':''} /> ${cfg.check}
+    </label>` : ''}
+    <div class="picker ${off?'disabled':''}" id="picker">
+      ${pickerInnerHTML(cfg)}
+    </div>`;
+}
+
+let lastAdded = null;   // the token that just arrived, so only it animates
+
+function pickerInnerHTML(cfg){
+  const chosen = state.medical[cfg.key];
+  const tokens = chosen.map(c =>
+    `<span class="token ${c === lastAdded ? 'is-new' : ''}">${esc(c)}<button type="button" data-token="${esc(c)}" aria-label="Remove ${esc(c)}">×</button></span>`
+  ).join('');
+
+  return `<div id="picker-inner">
+    <div class="token-box" id="token-box">
+      ${tokens}
+      <input id="med-input" type="text" autocomplete="off" placeholder="${tokens?'':esc(cfg.help)}" />
+      <div class="tt-list" id="tt-list" hidden></div>
+    </div>
+  </div>`;
+}
+
+function frequencyHTML(cfg){
+  return `<div class="picker" id="picker">
+    ${cfg.questions.map(q => `
+      <p class="med-q">${q.label}</p>
+      <div class="freq-grid">
+        ${cfg.options.map(o => `
+          <button class="freq ${state.medical.habits[q.id]===o?'on':''}" type="button"
+                  data-freq="${q.id}" data-value="${esc(o)}">${esc(o)}</button>`).join('')}
+      </div>`).join('')}
+  </div>`;
+}
+
+function mountMedical(){
+  $$('[data-med]').forEach(btn => btn.addEventListener('click', () => {
+    const key = btn.dataset.med;
+    state.medOpen = state.medOpen === key ? null : key;
+    renderStep();
+  }));
+
+  if(!state.medOpen) return;
+  const cfg = MED_SECTIONS[state.medOpen];
+
+  const flag = $('#med-flag');
+  if(flag) flag.addEventListener('change', () => {
+    state.medical[cfg.flag] = flag.checked;
+    if(flag.checked) state.medical[cfg.key] = [];
+    renderStep();
+  });
+
+  if(cfg.type === 'frequency'){
+    $$('[data-freq]').forEach(btn => btn.addEventListener('click', () => {
+      const q = btn.dataset.freq;
+      state.medical.habits[q] = state.medical.habits[q] === btn.dataset.value ? '' : btn.dataset.value;
+      renderStep();
+    }));
+    return;
+  }
+
+  bindPicker(cfg);
+}
+
+function bindPicker(cfg){
+  const chosen = () => state.medical[cfg.key];
+
+  $$('[data-token]').forEach(btn => btn.addEventListener('click', () => {
+    const list = chosen();
+    list.splice(list.indexOf(btn.dataset.token), 1);
+    lastAdded = null;
+    refreshPicker(cfg);
+  }));
+
+  const input = $('#med-input');
+  const list  = $('#tt-list');
+  if(!input) return;
+
+  let cursor = -1;
+
+  const options = q => {
+    const pool = [...cfg.library]
+      .filter(o => !chosen().includes(o))
+      .filter(o => o.toLowerCase().includes(q.toLowerCase()));
+    return [...new Set(pool)].slice(0, q ? 6 : 8);
+  };
+
+  const draw = () => {
+    const q = input.value.trim();
+    const matches = options(q);
+    if(!q){
+      // clicking the field opens the full list to pick from
+      list.innerHTML = matches.map((m,i) =>
+        `<button type="button" class="${i===cursor?'active':''}" data-pick="${esc(m)}">${esc(m)}</button>`).join('');
+      list.hidden = !list.innerHTML;
+      $$('[data-pick]', list).forEach(b => b.addEventListener('mousedown', e => {
+        e.preventDefault();
+        add(b.dataset.pick);
+      }));
+      return;
+    }
+    const exact = matches.some(m => m.toLowerCase() === q.toLowerCase());
+    const rows = matches.map((m,i) =>
+      `<button type="button" class="${i===cursor?'active':''}" data-pick="${esc(m)}">${esc(m)}</button>`).join('');
+    const addRow = exact ? '' :
+      `<button type="button" class="add-new ${cursor===matches.length?'active':''}" data-pick="${esc(q)}">+ Add as "${esc(q)}"</button>`;
+    list.innerHTML = rows + addRow;
+    list.hidden = !list.innerHTML;
+    $$('[data-pick]', list).forEach(b => b.addEventListener('mousedown', e => {
+      e.preventDefault();
+      add(b.dataset.pick);
+    }));
+  };
+
+  const add = value => {
+    if(value && !chosen().includes(value)) chosen().push(value);
+    lastAdded = value;
+    input.value = '';
+    refreshPicker(cfg, true);
+  };
+
+  input.addEventListener('input', () => { cursor = -1; draw(); });
+  input.addEventListener('focus', () => { cursor = -1; draw(); });
+  input.addEventListener('click', () => { cursor = -1; draw(); });
+  input.addEventListener('keydown', e => {
+    const rows = $$('[data-pick]', list);
+    if(e.key === 'ArrowDown'){ e.preventDefault(); cursor = Math.min(cursor+1, rows.length-1); draw(); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); cursor = Math.max(cursor-1, -1); draw(); }
+    else if(e.key === 'Enter'){
+      e.preventDefault();
+      add(cursor > -1 && rows[cursor] ? rows[cursor].dataset.pick : input.value.trim());
+    }
+    else if(e.key === 'Backspace' && !input.value && chosen().length){
+      chosen().pop();
+      refreshPicker(cfg, true);
+    }
+  });
+  input.addEventListener('blur', () => setTimeout(() => { list.hidden = true; }, 120));
+}
+
+function refreshPicker(cfg, focus){
+  $('#picker-inner').outerHTML = pickerInnerHTML(cfg);
+  bindPicker(cfg);
+  if(focus) $('#med-input').focus();
+}
+
+/* ============================================================
+   6f. STEP 7 — REVIEW & SIGN (CONSENTS)
+   ============================================================ */
+const CONSENTS = [
+  {
+    title:'HIPAA Authorization Consent',
+    intro:'I acknowledge that:',
+    points:[
+      'I have received and reviewed the Notice of Privacy Practices provided by Healthcare.',
+      'I consent to the use and disclosure of my health information as outlined in the notice for purposes related to my care, including the release of information to insurance companies for billing purposes.',
+      'I understand that I can revoke this consent in writing at any time, except to the extent that actions have already been taken based on the consent.',
+      'I understand that I have the right to withdraw my consent or delay the procedure at any time prior to the surgery.'
+    ]
+  }
+];
+
+const ATTESTATION = 'I hereby confirm that the information I have provided in this form, including personal details, demographic information, insurance, medical history, medications, allergies, and consents, is true, accurate, and complete to the best of my knowledge.';
+
+function consentState(i){
+  if(!state.consents[i]) state.consents[i] = { agreed:false, signature:null };
+  return state.consents[i];
+}
+
+function renderConsent(){
+  // clamp, in case the consent list shrank
+  if(state.consentIndex > CONSENTS.length - 1) state.consentIndex = 0;
+  const i = state.consentIndex;
+  const c = CONSENTS[i];
+  const rec = consentState(i);
+
+  return `
+    <h2 class="step-title">Review &amp; sign</h2>
+    <p class="step-lead">Please read and sign to complete your check-in.</p>
+
+    ${CONSENTS.length > 1 ? `<p class="consent-tag">Consent ${i + 1}/${CONSENTS.length}</p>` : ''}
+    <h3 class="consent-title">${esc(c.title)}</h3>
+    <p class="consent-sub">Patient Agreement:</p>
+    <p class="consent-intro">${esc(c.intro)}</p>
+    <ul class="consent-list">
+      ${c.points.map(pt => `<li>${esc(pt)}</li>`).join('')}
+    </ul>
+
+    <label class="attest">
+      <input type="checkbox" id="attest" ${rec.agreed?'checked':''} />
+      <span>${esc(ATTESTATION)}</span>
+    </label>
+
+    <p class="sig-label">Patient signature${CONSENTS.length > 1 ? ` (${i + 1}/${CONSENTS.length})` : ''}</p>
+    <canvas class="sig-pad" id="sig-pad"></canvas>
+    <button class="btn-clear" id="clear-sig" type="button">Clear Signature</button>`;
+}
+
+function mountConsent(){
+  const rec = consentState(state.consentIndex);
+
+  $('#attest').addEventListener('change', e => rec.agreed = e.target.checked);
+
+  const canvas = $('#sig-pad');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+
+  // size the bitmap to the element so strokes stay sharp
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#1b1f24';
+
+  if(rec.signature){
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+    img.src = rec.signature;
+  }
+
+  let drawing = false;
+  const pos = e => {
+    const r = canvas.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    return { x:p.clientX - r.left, y:p.clientY - r.top };
+  };
+  const start = e => {
+    e.preventDefault();
+    drawing = true;
+    const { x, y } = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+  const move = e => {
+    if(!drawing) return;
+    e.preventDefault();
+    const { x, y } = pos(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+  const stop = () => {
+    if(!drawing) return;
+    drawing = false;
+    rec.signature = canvas.toDataURL();
+  };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', stop);
+  canvas.addEventListener('touchstart', start, { passive:false });
+  canvas.addEventListener('touchmove', move,  { passive:false });
+  canvas.addEventListener('touchend', stop);
+
+  $('#clear-sig').addEventListener('click', () => {
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    rec.signature = null;
+  });
+}
+
+// Next pages through the consents before finishing.
+function validateConsent(){
+  if(state.consentIndex < CONSENTS.length - 1){
+    state.consentIndex++;
+    renderStep();
+    return { ok:false };
+  }
+  return { ok:true };
+}
+
+// Back pages through them in reverse before leaving the tab.
+function backConsent(){
+  if(state.consentIndex > 0){
+    state.consentIndex--;
+    renderStep();
+    return true;
+  }
+  return false;
+}
+
+/* ============================================================
+   6g. REVIEW SUMMARY + SUCCESS
+   ============================================================ */
+function chrome(stepper, greeting, footer){
+  $('#stepper').style.display   = stepper  ? '' : 'none';
+  $('.step-meta').style.display = stepper  ? '' : 'none';
+  $('#greet').style.display     = greeting ? '' : 'none';
+  $('.ob-footer').style.display = footer   ? '' : 'none';
+}
+
+const SNAPSHOT_KEYS = ['form','about','medical','insurances','consents','referralDocs',
+                       'profilePhoto','idDoc','patientName'];
+
+function takeSnapshot(){
+  const copy = {};
+  SNAPSHOT_KEYS.forEach(k => copy[k] = JSON.parse(JSON.stringify(state[k] ?? null)));
+  return copy;
+}
+
+function restoreSnapshot(){
+  if(!state.snapshot) return;
+  SNAPSHOT_KEYS.forEach(k => state[k] = state.snapshot[k]);
+  state.snapshot = null;
+}
+
+function goToStep(id){
+  const i = steps.findIndex(st => st.id === id);
+  if(i < 0) return;
+  state.snapshot = takeSnapshot();
+  state.editing = true;
+  state.stage = 'steps';
+  state.currentStep = i;
+  state.insView = state.insurances.length ? 'list' : 'form';
+  state.expandedIns = null;
+  renderStep();
+}
+
+// Keep the edit, hand control back to the summary.
+function saveEdit(){
+  const step = steps[state.currentStep];
+  if(step.id === 'insurance'){
+    if(state.insView === 'form' || !state.insurances.length){
+      if(!commitDraft()) return;
+    } else if(state.expandedIns){
+      readInsurance(formRecord());
+      state.expandedIns = null;
+    }
+  }
+  captureCurrent();
+  state.editing = false;
+  state.snapshot = null;
+  state.stage = 'summary';
+  renderStep();
+}
+
+// Throw the edit away and hand control back to the summary.
+function cancelEdit(){
+  restoreSnapshot();
+  state.editing = false;
+  state.stage = 'summary';
+  state.insView = state.insurances.length ? 'list' : 'form';
+  state.insDraft = null;
+  state.expandedIns = null;
+  renderStep();
+}
+
+function sumCard(icon, title, editId, body){
+  return `
+    <div class="sum-card">
+      <div class="sum-head">
+        <span class="sum-title">${icon} ${title}</span>
+        ${editId ? `<button class="btn-edit" type="button" data-goto="${editId}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>
+          Edit</button>` : ''}
+      </div>
+      ${body}
+    </div>`;
+}
+
+function sumRow(label, value){
+  if(!value) return '';
+  return `<p class="sum-row"><b>${label}:</b> ${esc(value)}</p>`;
+}
+
+function fullAddress(){
+  const f = state.form;
+  return [f.address1, f.address2, f.city, f.stateName, f.country, f.zip]
+    .filter(Boolean).join(', ');
+}
+
+function listOrNone(items){
+  return items.length
+    ? items.map(i => `<p class="sum-row">${esc(i)}</p>`).join('')
+    : '<p class="sum-empty">Nothing added</p>';
+}
+
+function renderSummary(){
+  chrome(false, true, true);
+  const f = state.form;
+  const m = state.medical;
+  const a = state.about;
+
+  const insurance = state.insurances.length ? state.insurances.map((r, i) => `
+    ${i ? '<div class="sum-divider"></div>' : ''}
+    <p class="sum-sub">${esc(r.coverageType) || 'Insurance'}</p>
+    ${sumRow('Policy Holder', r.policyHolder)}
+    ${sumRow('Payor', r.payor)}
+    ${sumRow('Plan', r.plan)}
+    ${sumRow('Policy Id', r.policyId)}
+    ${sumRow('Group ID', r.groupId)}
+    ${sumRow('Effective Date', usDate(r.effective))}
+    ${sumRow('Expiry Date', usDate(r.expiry))}
+  `).join('') : '<p class="sum-empty">No insurance added</p>';
+
+  const habits = Object.entries({ Alcohol:'alcohol', Smoking:'smoke', 'Recreational drugs':'drugs' })
+    .map(([label, key]) => sumRow(label, m.habits[key])).join('') || '';
+
+  const consents = CONSENTS.map((c, i) => {
+    const rec = state.consents[i];
+    const signed = rec && rec.signature;
+    return `<div class="sum-consent">
+      <span class="tick ${signed?'':'pending'}">${signed?'✓':'!'}</span>
+      <span>
+        <div class="cname">${esc(c.title)}</div>
+        <div class="cmeta">${signed ? 'Signed' : 'Signature pending'}</div>
+      </span>
+    </div>`;
+  }).join('');
+
+  $('#ob-body').innerHTML = `
+    <h2 class="step-title">Review your information</h2>
+    <p class="step-lead">Is everything correct? Feel free to modify any details before submitting.</p>
+
+    ${sumCard('👤','Personal Information','personal', `
+      ${sumRow('Name', [f.firstName, f.lastName].filter(Boolean).join(' '))}
+      ${sumRow('Date of Birth', usDate(f.dob))}
+      ${sumRow('Gender', f.gender)}
+      ${sumRow('Email', f.email)}
+      ${sumRow('Mobile Number', f.mobile)}
+      ${sumRow('Address', fullAddress())}`)}
+
+    ${sumCard('📷','Profile Picture','photo',
+      state.profilePhoto
+        ? `<div class="sum-avatar" style="background-image:url('${state.profilePhoto}')"></div>`
+        : '<p class="sum-empty">No photo added</p>')}
+
+    ${sumCard('✉️','Referral letter','referral',
+      state.referralDocs.length ? docListHTML(state.referralDocs).replace(/<button[^>]*>×<\/button>/g,'')
+                                : '<p class="sum-empty">No referral letter</p>')}
+
+    ${sumCard('💳','Insurance Information','insurance', insurance)}
+
+    ${sumCard('🧩','Little more about you','about', `
+      <p class="sum-sub">Language</p>
+      ${sumRow('Preferred language', a.language)}
+      <p class="sum-sub">Emergency Contact</p>
+      ${sumRow('Name', [a.ecFirst, a.ecLast].filter(Boolean).join(' '))}
+      ${sumRow('Relation', a.ecRelation)}
+      ${sumRow('Phone Number', a.ecPhone)}
+      <p class="sum-sub">Preferred Pharmacy</p>
+      ${sumRow('Pharmacy', a.phName)}
+      ${sumRow('Address', [a.phAddress, a.phCity].filter(Boolean).join(', '))}
+      ${sumRow('Phone Number', a.phPhone)}
+      <p class="sum-sub">More Info</p>
+      ${sumRow('Ethnicity', a.ethnicity)}
+      ${sumRow('Sexual Orientation', a.orientation)}`)}
+
+    ${sumCard('➕','Health Conditions','medical',
+      m.noConditions ? '<p class="sum-empty">No health conditions reported</p>' : listOrNone(m.conditions))}
+
+    ${sumCard('💊','Medications you take','medical',
+      m.noMeds ? '<p class="sum-empty">Not taking any medications</p>' : listOrNone(m.medications))}
+
+    ${sumCard('🌿','Allergies Information','medical',
+      m.noAllergies ? '<p class="sum-empty">No known allergies</p>' : listOrNone(m.allergies))}
+
+    ${sumCard('🍷','Daily Habits','medical', habits || '<p class="sum-empty">Nothing added</p>')}
+
+    ${sumCard('📝','Consent Form','consent', `
+      <div class="sum-note">
+        <span>ⓘ</span>
+        <span>Please complete all required signatures before submitting.</span>
+      </div>
+      ${consents}`)}
+
+    <label class="attest">
+      <input type="checkbox" id="final-confirm" ${state.confirmed?'checked':''} />
+      <span>${esc(ATTESTATION)}</span>
+    </label>`;
+
+  $('#btn-back').style.visibility = 'visible';
+  $('#btn-next').textContent = 'Submit';
+  $('#ob-body').scrollTop = 0;
+
+  $$('[data-goto]').forEach(btn =>
+    btn.addEventListener('click', () => goToStep(btn.dataset.goto)));
+  $('#final-confirm').addEventListener('change', e => state.confirmed = e.target.checked);
+  playEnter();
+}
+
+function renderDone(){
+  chrome(false, false, false);
+  $('#ob-body').innerHTML = `
+    <div class="done-wrap">
+      <div class="done-badge">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </div>
+      <h2>You're checked in</h2>
+      <p>Your submission was successful. We'll see you at your appointment.</p>
+    </div>`;
+  playEnter();
+}
+
+/* ============================================================
+   7. BOTTOM SHEET  — Scan ID / Upload Documents
+   ============================================================ */
+const SHEET_LABELS = {
+  id:        { scan:'Scan ID',        upload:'Upload Documents' },
+  insurance: { scan:'Scan Insurance', upload:'Upload Document'  }
+};
+
+function openSheet(context = 'id'){
+  document.body.classList.add('sheet-open');
+  state.sheetContext = context;
+  const labels = SHEET_LABELS[context];
+  $('[data-sheet="scan"]').textContent   = labels.scan;
+  $('[data-sheet="upload"]').textContent = labels.upload;
+  $('#sheet').classList.add('open');
+}
+function closeSheet(){
+  $('#sheet').classList.remove('open');
+  document.body.classList.remove('sheet-open');
+}
+
+$('#sheet').addEventListener('click', e => {
+  if(e.target.id === 'sheet') return closeSheet();
+  const action = e.target.dataset.sheet;
+  if(!action) return;
+  closeSheet();
+  if(action === 'cancel') return;
+
+  if(state.sheetContext === 'insurance'){
+    attachMockInsurance(action === 'scan' ? 'Insurance-Card.jpg' : 'Insurance-Policy.pdf');
+  } else {
+    attachMockDocument(action === 'scan' ? 'Driver-License.jpg' : 'Referral Letter.pdf');
+  }
+});
+
+function attachMockDocument(name){
+  state.idDoc = { name, size:'519.0 KB' };
+  $('#scan-result').innerHTML = fileChipHTML(state.idDoc);
+  bindRemoveDoc();
+
+  // Mock OCR result — only fills what is still blank
+  const detected = { firstName:'Hrithika', lastName:'Madireddy', dob:'2000-01-21' };
+  Object.keys(detected).forEach(k => { if(!state.form[k]) state.form[k] = detected[k]; });
+
+  ['firstName','lastName','dob'].forEach(k => {
+    const el = $('#f-' + k);
+    if(el) el.value = state.form[k];
+    setValid(k, true);
+  });
+
+  const first = state.form.firstName.trim();
+  const last  = state.form.lastName.trim();
+  state.patientName = (first && last) ? `${first} ${last}` : '';
+  $('#greet').textContent = greeting();
+}
+
+function attachMockInsurance(name){
+  const rec = formRecord();
+  if(!rec) return;
+  const n = rec.docs.length ? `Image${rec.docs.length + 1}.pdf` : 'Image.pdf';
+  rec.docs.push({ name:n, size:'519.0 KB' });
+
+  // Mock OCR result — only fills what is still blank
+  const detected = {
+    coverageType:'Primary Insurance',
+    policyHolder:'Self',
+    payor:'(NLH) Horizon Health Insurance',
+    plan:'Group D Coverage',
+    policyId:'XZP884213907',
+    groupId:'GRP-40921',
+    effective:'2025-05-24',
+    expiry:'2027-05-24'
+  };
+  Object.keys(detected).forEach(k => { if(!rec[k]) rec[k] = detected[k]; });
+
+  $('#ins-docs').innerHTML = docListHTML(rec.docs);
+  INS_FIELDS.forEach(k => {
+    const el = $('#i-'+k);
+    if(el){ el.value = rec[k]; el.classList && el.classList.toggle('empty', !rec[k]); }
+    setValid(k, true);
+  });
+  mountInsurance();
+}
+
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSheet(); });
+</script>
+</body>
+</html>
